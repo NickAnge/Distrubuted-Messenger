@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GroupManager {
     private static String MultiCastAddress = "230.0.0.0";
@@ -15,27 +17,45 @@ public class GroupManager {
         MulticastSocket MainThreadSocket;
 
         try {
+
+            System.out.println("Waiting For new Apps...");
             MainThreadSocket = new MulticastSocket(MultiCastPort);
             InetAddress group = InetAddress.getByName(MultiCastAddress);
             MainThreadSocket.joinGroup(group);
             byte[] msg = new byte[1024];
             DatagramPacket packet = new DatagramPacket(msg,msg.length);
             MainThreadSocket.receive(packet);
+            System.out.println("New app request connection...");
 
-            String msg2 = new String(packet.getData(), packet.getOffset(), packet.getLength());
+            ServerSocket Tcp = new ServerSocket(0);
+            String msg1 = new String(""+ Tcp.getLocalPort());
+            byte[] bytemsg = msg1.getBytes();
+            System.out.println("Sennding the Tcp_info,port" +Tcp.getLocalPort());
+            DatagramSocket UdpSocket = new DatagramSocket();
+            DatagramPacket packet2 = new DatagramPacket(bytemsg,bytemsg.length,packet.getAddress(),packet.getPort());
 
-            System.out.println("Receive a new App:"+ msg2 + " length "+ packet.getLength() + packet.getAddress());
+            UdpSocket.send(packet2);
+
+            Socket AppCommunicationInfo = Tcp.accept();
+
+            System.out.println("App accepted the communication");
+            System.out.println("Adress "+ AppCommunicationInfo.getInetAddress().getHostAddress() + "Port " + AppCommunicationInfo.getPort());
+            Tcp.close();
+            UdpSocket.close();
 
 
-            Socket TcpApp = new Socket(packet.getAddress(), Integer.parseInt(msg2));
+//            System.out.println("Receive a new App:"+ msg2 + " length "+ packet.getLength() + packet.getAddress());
 
-            System.out.println("Socket Group port" + TcpApp.getPort() + TcpApp.getLocalPort());
-            String input = "Ante gamhsou";
-            PrintWriter out  = new PrintWriter(TcpApp.getOutputStream(),true);
+
+//            Socket TcpApp = new Socket(packet.getAddress(), Integer.parseInt(msg2));
+
+//            System.out.println("Socket Group port" + TcpApp.getPort() + TcpApp.getLocalPort());
+            String input = "FromGroupManager";
+            PrintWriter out  = new PrintWriter(AppCommunicationInfo.getOutputStream(),true);
             out.println(input);
             out.flush();
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(TcpApp.getInputStream()));
+//
+            BufferedReader in = new BufferedReader(new InputStreamReader(AppCommunicationInfo.getInputStream()));
             String data = in.readLine();
             System.out.println("\r\nMessage from " + data);
 

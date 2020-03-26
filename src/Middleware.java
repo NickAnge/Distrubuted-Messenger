@@ -8,12 +8,24 @@ import java.util.List;
 
 public class Middleware implements IApi{
     Socket CommunicationChannel;
+    List<GroupInfo> Groups ;
+
+    public Middleware() {
+        Groups = new ArrayList<GroupInfo>();
+    }
 
     @Override
     public int grp_join(String grpName, String myId) {
 
         discoverGroupManager();
 
+
+        try {
+//            System.out.println(InetAddress.getLocalHost().);
+            String myInformation = new String(grpName +" " + myId + " "+ InetAddress.getLocalHost().getHostAddress());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
     @Override
@@ -33,38 +45,50 @@ public class Middleware implements IApi{
 
 
     public void  discoverGroupManager() {
-        MulticastSocket MainThreadSocket;
+        DatagramSocket Discovery;
+        DatagramPacket packet = null;
         try {
+            System.out.println("Trying to discover Group Manager...");
 
-            ServerSocket Tcp = new ServerSocket(0);
-            System.out.println("Received message For Group" + " "+Tcp.getLocalPort() + " "+ Tcp.getInetAddress());
-            MainThreadSocket = new MulticastSocket(MultiCastPort);
-            MainThreadSocket.setReuseAddress(true);
-            InetAddress group = InetAddress.getByName(MultiCastGroupAddress);
-            MainThreadSocket.joinGroup(group);
-            String message = new String("" +Tcp.getLocalPort());
+            Discovery = new DatagramSocket();
+            int i = 0;
+            while(i!=4){
+                byte[] msg =  new byte[1024];
+                packet = new DatagramPacket(msg,msg.length, InetAddress.getByName(MultiCastGroupAddress),MultiCastPort);
+                Discovery.send(packet);
+                System.out.println("Sending packet");
+                System.out.println("Wait Group Manager to Answer");
+                Discovery.setSoTimeout(500);
+                try {
+                    Discovery.receive(packet);
+                    break;
+                }catch (SocketTimeoutException ex){
+                    System.out.println("Trying again..");
+                    i++;
+                }
+            }
+            if(i == 4){
+                return;
+            }
+            String msg1 = new String(packet.getData(), packet.getOffset(), packet.getLength());
+            System.out.println("Discovery was successful"+ msg1);
 
-            byte[] msg = message.getBytes();
+            CommunicationChannel = new Socket(packet.getAddress(),Integer.parseInt(msg1));
 
-            DatagramPacket packet = new DatagramPacket(msg,msg.length,group,MultiCastPort);
-            MainThreadSocket.send(packet);
-
-            System.out.println("Sending packet");
-            System.out.println("Wait Group Manager to Answer");
-
-            CommunicationChannel = Tcp.accept();
             String clientAddress = CommunicationChannel.getInetAddress().getHostAddress();
-            System.out.println("\r\nNew connection from " + CommunicationChannel.getPort());
 
-            Tcp.close();
+            System.out.println("We will communicate with Group Manager at Address +" +clientAddress + "Port:"+ CommunicationChannel.getPort());
+
             BufferedReader in = new BufferedReader(new InputStreamReader(CommunicationChannel.getInputStream()));
+            Thread.sleep(10000);
 
             String data = in.readLine();
             System.out.println("\r\nMessage from " + clientAddress + ": " + data);
 
+            Thread.sleep(10000);
             String input = "From Server";
             PrintWriter out  = new PrintWriter(CommunicationChannel.getOutputStream(),true);
-//            PrintWriter out = new PrintWriter(Tcp.getOutputStream(), true);
+
             out.println(input);
             out.flush();
             Thread.sleep(10000);
@@ -72,68 +96,8 @@ public class Middleware implements IApi{
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-
     }
 }
-
-class GroupInfo {
-    String groupName;
-    List<EachMemberInfo> Members;
-
-    public GroupInfo(String groupName) {
-        this.groupName = groupName;
-        Members = new ArrayList<EachMemberInfo>();
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
-    public List<EachMemberInfo> getMembers() {
-        return Members;
-    }
-}
-
-class EachMemberInfo {
-    String Name;
-    InetAddress MemberAddress;
-    int MemberPort;
-
-    public EachMemberInfo(String name, InetAddress memberAddress, int memberPort) {
-        Name = name;
-        MemberAddress = memberAddress;
-        MemberPort = memberPort;
-    }
-
-    public String getName() {
-        return Name;
-    }
-
-    public void setName(String name) {
-        Name = name;
-    }
-
-    public InetAddress getMemberAddress() {
-        return MemberAddress;
-    }
-
-    public void setMemberAddress(InetAddress memberAddress) {
-        MemberAddress = memberAddress;
-    }
-
-    public int getMemberPort() {
-        return MemberPort;
-    }
-
-    public void setMemberPort(int memberPort) {
-        MemberPort = memberPort;
-    }
-}
-
 
 class GroupManagerInfo{
     InetAddress ManagerAddress;
