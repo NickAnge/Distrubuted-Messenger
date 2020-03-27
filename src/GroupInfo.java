@@ -1,10 +1,15 @@
+import java.beans.Transient;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GroupInfo {
-    String groupName;
-    List<EachMemberInfo> Members;
+public class GroupInfo implements Serializable {
+    private  String groupName;
+    private List<EachMemberInfo> Members;
 
     public GroupInfo(String groupName) {
         this.groupName = groupName;
@@ -22,15 +27,31 @@ public class GroupInfo {
     public List<EachMemberInfo> getMembers() {
         return Members;
     }
+
 }
 
 
-class EachMemberInfo {
-    String Name;
-    InetAddress MemberAddress;
+class EachMemberInfo implements Serializable {
+    private String Name;
+    private transient  Socket AppSocket ;
+    private String MemberAddress;
     int MemberPort;
 
-    public EachMemberInfo(String name, InetAddress memberAddress, int memberPort) {
+    public EachMemberInfo(String name, Socket appSocket, String memberAddress, int memberPort) {
+        Name = name;
+        AppSocket = appSocket;
+        MemberAddress = memberAddress;
+        MemberPort = memberPort;
+    }
+    public Socket getAppSocket() {
+        return AppSocket;
+    }
+
+    public void setAppSocket(Socket appSocket) {
+        AppSocket = appSocket;
+    }
+
+    public EachMemberInfo(String name, String memberAddress, int memberPort) {
         Name = name;
         MemberAddress = memberAddress;
         MemberPort = memberPort;
@@ -44,11 +65,11 @@ class EachMemberInfo {
         Name = name;
     }
 
-    public InetAddress getMemberAddress() {
+    public String getMemberAddress() {
         return MemberAddress;
     }
 
-    public void setMemberAddress(InetAddress memberAddress) {
+    public void setMemberAddress(String memberAddress) {
         MemberAddress = memberAddress;
     }
 

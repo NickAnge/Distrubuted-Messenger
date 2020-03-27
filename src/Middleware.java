@@ -1,32 +1,55 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Middleware implements IApi{
-    Socket CommunicationChannel;
-    List<GroupInfo> Groups ;
+    GroupManagerInfo InfoManager;
+    String OursAddress;
+    int OurPort;
+    HashMap<Integer,GroupInfo> Groups;
+    int gSock;
 
     public Middleware() {
-        Groups = new ArrayList<GroupInfo>();
+
+        Groups = new HashMap<Integer,GroupInfo>();
+        InfoManager = new GroupManagerInfo(null);
+        gSock =0;
     }
 
     @Override
     public int grp_join(String grpName, String myId) {
 
-        discoverGroupManager();
-
-
-        try {
-//            System.out.println(InetAddress.getLocalHost().);
-            String myInformation = new String(grpName +" " + myId + " "+ InetAddress.getLocalHost().getHostAddress());
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        //Discovery of the Group Manager  from Middleware;
+        if(this.InfoManager.getCommunicationSock() == null) {
+            discoverGroupManager();
         }
-        return 0;
+        try {
+            String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" ");
+            System.out.println("Trying to send My info");
+            sendMsgFromSocket(InfoManager.getCommunicationSock(),myInformation);
+
+            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
+            System.out.println("Trying to recieve Message Group");
+            GroupInfo newVIew = (GroupInfo) in.readObject();
+            gSock ++;
+            Groups.put(gSock,newVIew);
+            System.out.println("Group Name: " + newVIew.getGroupName());
+            for(int i = 0;i <newVIew.getMembers().size();i++){
+                System.out.println("Name: "+newVIew.getMembers().get(i).getName());
+                System.out.println("Address: "+ newVIew.getMembers().get(i).getMemberAddress() );
+                System.out.println("Port:"+newVIew.getMembers().get(0).getMemberPort());
+            }
+            Thread.sleep(30000);
+
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
+            e.printStackTrace();
+//        }}
+        }
+
+
+        return gSock;
     }
     @Override
     public int grp_leave(int gSock) {
@@ -44,12 +67,37 @@ public class Middleware implements IApi{
     }
 
 
+
+    public  String getMsgFromSocket(Socket socket){
+        String data = null;
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            data = in.readLine();
+            System.out.println("\r\nMessage from " + socket.getInetAddress().getHostAddress() + ": " + data);
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+        return data;
+    }
+    public  void sendMsgFromSocket(Socket socket,String msg)  {
+        try {
+            PrintWriter out = new PrintWriter(this.InfoManager.getCommunicationSock().getOutputStream(), true);
+
+            out.println(msg);
+            out.flush();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+        return ;
+    }
+
     public void  discoverGroupManager() {
         DatagramSocket Discovery;
         DatagramPacket packet = null;
         try {
             System.out.println("Trying to discover Group Manager...");
-
             Discovery = new DatagramSocket();
             int i = 0;
             while(i!=4){
@@ -58,7 +106,7 @@ public class Middleware implements IApi{
                 Discovery.send(packet);
                 System.out.println("Sending packet");
                 System.out.println("Wait Group Manager to Answer");
-                Discovery.setSoTimeout(500);
+                Discovery.setSoTimeout(2000);
                 try {
                     Discovery.receive(packet);
                     break;
@@ -71,28 +119,17 @@ public class Middleware implements IApi{
                 return;
             }
             String msg1 = new String(packet.getData(), packet.getOffset(), packet.getLength());
-            System.out.println("Discovery was successful"+ msg1);
+            String []splitMsg = msg1.split(" ",2);
+            System.out.println("Discovery was successful"+ splitMsg[0]+" "+ splitMsg[1]);
+            OursAddress =splitMsg[0].replace("/","");
+            Thread.sleep(5000);
+            Socket CommunicationChannel = new Socket(packet.getAddress(),Integer.parseInt(splitMsg[1]));
 
-            CommunicationChannel = new Socket(packet.getAddress(),Integer.parseInt(msg1));
+            System.out.println("We will communicate with Group Manager at Address +" + CommunicationChannel.getInetAddress().getHostAddress() + "Port:"+ CommunicationChannel.getPort());
 
-            String clientAddress = CommunicationChannel.getInetAddress().getHostAddress();
-
-            System.out.println("We will communicate with Group Manager at Address +" +clientAddress + "Port:"+ CommunicationChannel.getPort());
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(CommunicationChannel.getInputStream()));
-            Thread.sleep(10000);
-
-            String data = in.readLine();
-            System.out.println("\r\nMessage from " + clientAddress + ": " + data);
+            this.InfoManager.setCommunicationSock(CommunicationChannel);
 
             Thread.sleep(10000);
-            String input = "From Server";
-            PrintWriter out  = new PrintWriter(CommunicationChannel.getOutputStream(),true);
-
-            out.println(input);
-            out.flush();
-            Thread.sleep(10000);
-//            CommunicationChannel.close();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -100,27 +137,41 @@ public class Middleware implements IApi{
 }
 
 class GroupManagerInfo{
-    InetAddress ManagerAddress;
-    int ManagerPort;
+    Socket CommunicationSock;
 
-    public GroupManagerInfo(InetAddress managerAddress, int managerPort) {
-        ManagerAddress = managerAddress;
-        ManagerPort = managerPort;
+    public Socket getCommunicationSock() {
+        return CommunicationSock;
     }
 
-    public InetAddress getManagerAddress() {
-        return ManagerAddress;
+    public void setCommunicationSock(Socket communicationSock) {
+        CommunicationSock = communicationSock;
     }
 
-    public void setManagerAddress(InetAddress managerAddress) {
-        ManagerAddress = managerAddress;
+    public GroupManagerInfo(Socket communicationSock) {
+        CommunicationSock = communicationSock;
     }
+//    InetAddress ManagerAddress;
+//    int ManagerPort;
+//
+//    public GroupManagerInfo(InetAddress managerAddress, int managerPort) {
+//        ManagerAddress = managerAddress;
+//        ManagerPort = managerPort;
+//    }
+//
+//    public InetAddress getManagerAddress() {
+//        return ManagerAddress;
+//    }
+//
+//    public void setManagerAddress(InetAddress managerAddress) {
+//        ManagerAddress = managerAddress;
+//    }
+//
+//    public int getManagerPort() {
+//        return ManagerPort;
+//    }
+//
+//    public void setManagerPort(int managerPort) {
+//        ManagerPort = managerPort;
+//    }
 
-    public int getManagerPort() {
-        return ManagerPort;
-    }
-
-    public void setManagerPort(int managerPort) {
-        ManagerPort = managerPort;
-    }
 }
