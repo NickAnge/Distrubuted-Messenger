@@ -9,6 +9,7 @@ import java.util.Set;
 public class GroupManager {
     private static String MultiCastAddress = "230.0.0.0";
     private static int MultiCastPort = 4321;
+
     private HashMap<Integer,GroupInfo> ListOfGroupsIntoManager;
     private  int numberOfGroups;
 
@@ -62,12 +63,17 @@ public class GroupManager {
 
                 System.out.println("App accepted the communication");
                 System.out.println("Adress "+ AppCommunicationInfo.getInetAddress().getHostAddress() + "Port " + AppCommunicationInfo.getPort());
+                System.out.println("Port of communication with other members1" + packet2.getPort());
 //                Tcp.close();
                 UdpSocket.close();
 
-                String MsgRequest = getMsgFromSocket(AppCommunicationInfo);
-                String []splitMsg = MsgRequest.split(" ",3);
-                EachMemberInfo NewMember = new EachMemberInfo(splitMsg[1],AppCommunicationInfo,splitMsg[2],AppCommunicationInfo.getPort());
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(AppCommunicationInfo.getInputStream()));
+                String MsgRequest = in.readLine();
+//                String MsgRequest = getMsgFromSocket(AppCommunicationInfo);
+                String []splitMsg = MsgRequest.split(" ",4);
+                EachMemberInfo NewMember = new EachMemberInfo(splitMsg[1],AppCommunicationInfo,splitMsg[2],Integer.parseInt(splitMsg[3]));
+
                 int flag = 0;
                 System.out.println("Info of the new member sended...");
                 Set<Integer> gSocket  = groupManager.getListOfGroupsIntoManager().keySet();
@@ -76,12 +82,15 @@ public class GroupManager {
                         groupManager.getListOfGroupsIntoManager().get(req).getMembers().add(NewMember);
                         flag = 0;
                         for(int counter =0; counter <groupManager.getListOfGroupsIntoManager().size(); counter++){
+                            if(groupManager.getListOfGroupsIntoManager().get(req).getMembers().get(counter).getName().equals(NewMember.getName())){
+                                continue;
+                            }
+                            else{
+                                sendNewViewFromSocket(groupManager.getListOfGroupsIntoManager().get(req).getMembers().get(counter).getAppSocket(),groupManager.getListOfGroupsIntoManager().get(req));
+                            }
                             //Enhmerwse tous upoloipous
                         }
-                        ObjectOutputStream out = new ObjectOutputStream(AppCommunicationInfo.getOutputStream());
-                        System.out.println("Trying to send Message Group");
-                        out.writeObject(groupManager.getListOfGroupsIntoManager().get(req));
-                        out.flush();
+                        sendNewViewFromSocket(AppCommunicationInfo,groupManager.getListOfGroupsIntoManager().get(req));
                         break;
                     } else {
                         flag = 1;
@@ -96,14 +105,34 @@ public class GroupManager {
                     int temp = groupManager.getNumberOfGroups();
                     temp++;
                     groupManager.setNumberOfGroups(temp);
-                    groupManager.getListOfGroupsIntoManager().put(temp,NewGroup);
-
-                    ObjectOutputStream out = new ObjectOutputStream(AppCommunicationInfo.getOutputStream());
-                    System.out.println("Trying to send Message Group");
-                    out.writeObject(groupManager.getListOfGroupsIntoManager().get(temp));
-                    out.flush();
-
+                    groupManager.getListOfGroupsIntoManager().put(temp,NewGroup);//Prosthikh kainourgias omadas sthn apothikh
+                    sendNewViewFromSocket(AppCommunicationInfo,groupManager.getListOfGroupsIntoManager().get(temp));//apostolh new View
                 }
+                //Elegxos mhpws mou hrthan mhnumata
+                Set<Integer> keys = groupManager.getListOfGroupsIntoManager().keySet();
+
+                for(Integer req : keys){
+                    int times = groupManager.getListOfGroupsIntoManager().get(req).getMembers().size();
+
+                    for(int i = 0; i <times; i++){
+                        String data = getMsgFromSocket(groupManager.getListOfGroupsIntoManager().get(req).getMembers().get(i).getAppSocket());
+                        if(data == null){
+                            continue;
+                        }
+                        if(data.equals("IWantToLeave")){
+                            groupManager.getListOfGroupsIntoManager().get(times).getMembers().remove(i);
+                            if(groupManager.getListOfGroupsIntoManager().get(req).getMembers().size() == 0){
+                                break;
+                            }
+                            else {
+                                //enhmerwse tous upoloipous
+                            }
+                        }
+                    }
+//                    if(groupManager.getListOfGroupsIntoManager().get(req).)
+                }
+
+
             }
 
 
@@ -133,14 +162,22 @@ public class GroupManager {
 
     public static String getMsgFromSocket(Socket socket){
         String data = null;
+
         try {
+            socket.setSoTimeout(500);
+
+//            socket.setSoTimeout(500);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             data = in.readLine();
             System.out.println("\r\nMessage from " + socket.getInetAddress().getHostAddress() + ": " + data);
-        }
-        catch (IOException e){
+//            socket.setSoTimeout(0);
+        } catch (SocketTimeoutException e) {
+            return null;
+//            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
+
         return data;
     }
     public  static void sendMsgFromSocket(Socket socket,String msg)  {
@@ -151,6 +188,19 @@ public class GroupManager {
             out.flush();
         }
         catch (IOException e){
+            e.printStackTrace();
+        }
+        return ;
+    }
+
+    public static void sendNewViewFromSocket(Socket socket,Object object){
+        ObjectInputStream in = null;
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            System.out.println("Trying to send Message Group");
+            out.writeObject(object);
+            out.flush();
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return ;

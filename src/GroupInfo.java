@@ -37,6 +37,7 @@ class EachMemberInfo implements Serializable {
     private String MemberAddress;
     int MemberPort;
 
+
     public EachMemberInfo(String name, Socket appSocket, String memberAddress, int memberPort) {
         Name = name;
         AppSocket = appSocket;

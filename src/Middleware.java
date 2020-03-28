@@ -1,16 +1,20 @@
 import java.io.*;
 import java.net.*;
+import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class Middleware implements IApi{
     GroupManagerInfo InfoManager;
+    DatagramSocket Discovery;
     String OursAddress;
     int OurPort;
-    HashMap<Integer,GroupInfo> Groups;
-    int gSock;
 
+    HashMap<Integer,GroupInfo> Groups;
+
+    int gSock;
     public Middleware() {
 
         Groups = new HashMap<Integer,GroupInfo>();
@@ -25,27 +29,44 @@ public class Middleware implements IApi{
         if(this.InfoManager.getCommunicationSock() == null) {
             discoverGroupManager();
         }
+
+
         try {
-            String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" ");
+            String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" " + OurPort);
             System.out.println("Trying to send My info");
             sendMsgFromSocket(InfoManager.getCommunicationSock(),myInformation);
 
-            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
-            System.out.println("Trying to recieve Message Group");
-            GroupInfo newVIew = (GroupInfo) in.readObject();
-            gSock ++;
-            Groups.put(gSock,newVIew);
-            System.out.println("Group Name: " + newVIew.getGroupName());
-            for(int i = 0;i <newVIew.getMembers().size();i++){
-                System.out.println("Name: "+newVIew.getMembers().get(i).getName());
-                System.out.println("Address: "+ newVIew.getMembers().get(i).getMemberAddress() );
-                System.out.println("Port:"+newVIew.getMembers().get(0).getMemberPort());
-            }
-            Thread.sleep(30000);
+//
+            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
 
+            gSock ++;
+            Groups.put(gSock,newGroup);
+
+
+            System.out.println("Group Name: " + newGroup.getGroupName());
+            for(int i = 0;i <newGroup.getMembers().size();i++){
+                System.out.println("Name: "+newGroup.getMembers().get(i).getName());
+                System.out.println("Address: "+ newGroup.getMembers().get(i).getMemberAddress() );
+                System.out.println("Port:"+newGroup.getMembers().get(0).getMemberPort());
+
+
+            }
+
+            Thread.sleep(20000);
+
+            GroupInfo newGroup2 = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
+
+            System.out.println("Group Name: " + newGroup2.getGroupName());
+            for(int i = 0;i <newGroup2.getMembers().size();i++){
+                System.out.println("Name: "+newGroup2.getMembers().get(i).getName());
+                System.out.println("Address: "+ newGroup2.getMembers().get(i).getMemberAddress() );
+                System.out.println("Port:"+newGroup2.getMembers().get(0).getMemberPort());
+
+
+            }
         } catch (IOException | ClassNotFoundException | InterruptedException e) {
             e.printStackTrace();
-//        }}
+
         }
 
 
@@ -53,7 +74,18 @@ public class Middleware implements IApi{
     }
     @Override
     public int grp_leave(int gSock) {
-        return 0;
+
+        String msg = "IWantToLeave";
+
+        sendMsgFromSocket(InfoManager.getCommunicationSock(),msg);
+        Groups.remove(gSock);
+        Set <Integer>  Keys = Groups.keySet();
+
+        for(Integer req : Keys){
+            System.out.println(Groups.get(req).getGroupName());
+        }
+
+        return 1;
     }
 
     @Override
@@ -66,6 +98,14 @@ public class Middleware implements IApi{
         return 0;
     }
 
+
+    public Object getViewFromSocket(Socket socket) throws IOException, ClassNotFoundException {
+        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+        System.out.println("Middleware receiving new VIEW ");
+        GroupInfo newVIew = (GroupInfo) in.readObject();
+
+        return  newVIew;
+    }
 
 
     public  String getMsgFromSocket(Socket socket){
@@ -94,11 +134,14 @@ public class Middleware implements IApi{
     }
 
     public void  discoverGroupManager() {
-        DatagramSocket Discovery;
+
         DatagramPacket packet = null;
+
         try {
             System.out.println("Trying to discover Group Manager...");
             Discovery = new DatagramSocket();
+            System.out.println(Discovery.getLocalPort());
+            OurPort = Discovery.getLocalPort();
             int i = 0;
             while(i!=4){
                 byte[] msg =  new byte[1024];
@@ -122,15 +165,15 @@ public class Middleware implements IApi{
             String []splitMsg = msg1.split(" ",2);
             System.out.println("Discovery was successful"+ splitMsg[0]+" "+ splitMsg[1]);
             OursAddress =splitMsg[0].replace("/","");
-            Thread.sleep(5000);
+//            Thread.sleep(5000);
             Socket CommunicationChannel = new Socket(packet.getAddress(),Integer.parseInt(splitMsg[1]));
 
             System.out.println("We will communicate with Group Manager at Address +" + CommunicationChannel.getInetAddress().getHostAddress() + "Port:"+ CommunicationChannel.getPort());
 
             this.InfoManager.setCommunicationSock(CommunicationChannel);
 
-            Thread.sleep(10000);
-        } catch (IOException | InterruptedException e) {
+//            Thread.sleep(10000);
+        } catch (IOException  e) {
             e.printStackTrace();
         }
     }
