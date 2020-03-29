@@ -10,10 +10,20 @@ import java.util.List;
 public class GroupInfo implements Serializable {
     private  String groupName;
     private List<EachMemberInfo> Members;
+    private int id;
 
-    public GroupInfo(String groupName) {
+    public GroupInfo(String groupName,int newid) {
         this.groupName = groupName;
         Members = new ArrayList<EachMemberInfo>();
+        id = newid;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getGroupName() {
@@ -29,7 +39,6 @@ public class GroupInfo implements Serializable {
     }
 
 }
-
 
 class EachMemberInfo implements Serializable {
     private String Name;
@@ -80,5 +89,46 @@ class EachMemberInfo implements Serializable {
 
     public void setMemberPort(int memberPort) {
         MemberPort = memberPort;
+    }
+}
+
+
+class Message implements  Serializable {
+    private String type; //Add, Leave, GroupView
+    private GroupInfo View;
+    private String Message;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public GroupInfo getView() {
+        return View;
+    }
+
+    public void setView(GroupInfo view) {
+        View = view;
+    }
+
+    public String getMessage() {
+        return Message;
+    }
+
+    public void setMessage(String message) {
+        Message = message;
+    }
+
+    public Message(String type, GroupInfo view) {
+        this.type = type;
+        View = view;
+    }
+
+    public Message(String type, String message) {
+        this.type = type;
+        Message = message;
     }
 }

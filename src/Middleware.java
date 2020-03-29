@@ -10,6 +10,7 @@ public class Middleware implements IApi{
     GroupManagerInfo InfoManager;
     DatagramSocket Discovery;
     String OursAddress;
+    int checkValue;
     int OurPort;
 
     HashMap<Integer,GroupInfo> Groups;
@@ -19,25 +20,23 @@ public class Middleware implements IApi{
 
         Groups = new HashMap<Integer,GroupInfo>();
         InfoManager = new GroupManagerInfo(null);
+        discoverGroupManager();
+
         gSock =0;
     }
 
     @Override
     public int grp_join(String grpName, String myId) {
-
-        //Discovery of the Group Manager  from Middleware;
-        if(this.InfoManager.getCommunicationSock() == null) {
-            discoverGroupManager();
-        }
-
-
         try {
             String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" " + OurPort);
-            System.out.println("Trying to send My info");
+            System.out.println("Trying to send My info" + InfoManager.getCommunicationSock());
             sendMsgFromSocket(InfoManager.getCommunicationSock(),myInformation);
 
 //
-            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
+            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
+            System.out.println("Middleware receiving new VIEW ");
+            GroupInfo newGroup = (GroupInfo) in.readObject();
+//            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
 
             gSock ++;
             Groups.put(gSock,newGroup);
@@ -52,30 +51,29 @@ public class Middleware implements IApi{
 
             }
 
-            Thread.sleep(20000);
+//            Thread.sleep(20000);
 
-            GroupInfo newGroup2 = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
-
-            System.out.println("Group Name: " + newGroup2.getGroupName());
-            for(int i = 0;i <newGroup2.getMembers().size();i++){
-                System.out.println("Name: "+newGroup2.getMembers().get(i).getName());
-                System.out.println("Address: "+ newGroup2.getMembers().get(i).getMemberAddress() );
-                System.out.println("Port:"+newGroup2.getMembers().get(0).getMemberPort());
-
-
-            }
-        } catch (IOException | ClassNotFoundException | InterruptedException e) {
+//            GroupInfo newGroup2 = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
+//
+//            System.out.println("Group Name: " + newGroup2.getGroupName());
+//            for(int i = 0;i <newGroup2.getMembers().size();i++){
+//                System.out.println("Name: "+newGroup2.getMembers().get(i).getName());
+//                System.out.println("Address: "+ newGroup2.getMembers().get(i).getMemberAddress() );
+//                System.out.println("Port:"+newGroup2.getMembers().get(0).getMemberPort());
+//
+//
+//            }
+        } catch (IOException | ClassNotFoundException e ) {
             e.printStackTrace();
 
         }
-
 
         return gSock;
     }
     @Override
     public int grp_leave(int gSock) {
 
-        String msg = "IWantToLeave";
+        String msg = "Leave";
 
         sendMsgFromSocket(InfoManager.getCommunicationSock(),msg);
         Groups.remove(gSock);
@@ -99,10 +97,18 @@ public class Middleware implements IApi{
     }
 
 
-    public Object getViewFromSocket(Socket socket) throws IOException, ClassNotFoundException {
-        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-        System.out.println("Middleware receiving new VIEW ");
-        GroupInfo newVIew = (GroupInfo) in.readObject();
+    public Object getViewFromSocket(Socket socket)   {
+
+        GroupInfo newVIew = null;
+        try {
+//            socket.setSoTimeout(500);
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            System.out.println("Middleware receiving new VIEW ");
+            newVIew = (GroupInfo) in.readObject();
+
+        } catch (IOException | ClassNotFoundException e) {
+//            return null;
+        }
 
         return  newVIew;
     }
@@ -159,7 +165,8 @@ public class Middleware implements IApi{
                 }
             }
             if(i == 4){
-                return;
+                checkValue =0;
+                return ;
             }
             String msg1 = new String(packet.getData(), packet.getOffset(), packet.getLength());
             String []splitMsg = msg1.split(" ",2);
@@ -176,6 +183,8 @@ public class Middleware implements IApi{
         } catch (IOException  e) {
             e.printStackTrace();
         }
+        checkValue =1;
+        return ;
     }
 }
 
