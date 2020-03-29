@@ -46,7 +46,7 @@ class Application extends Thread{
         String name = in.next();
         String Group;
         int Sock = 0;
-
+        App.MiddleWareClient.start();
 
         while(true) {
             System.out.println(RED_BOLD + "MENU: ");
@@ -62,7 +62,6 @@ class Application extends Thread{
                     Group = in.next();
                     System.out.println(RESET);
                     Sock = App.appMiddleware.grp_join(Group, name);
-//                    App.MiddleWareClient.start();
                     System.out.println(Sock);
 
 
@@ -92,10 +91,10 @@ class AppMiddle extends Thread {
         while(true){
             System.out.println("CONINU");
             GroupInfo newGroup2 = (GroupInfo) App.appMiddleware.getViewFromSocket(App.appMiddleware.InfoManager.getCommunicationSock());
-//            if(newGroup2 == null){
-////                App.AppClient.
-//                continue;
-//            }
+            if(newGroup2 == null){
+//                App.AppClient.
+                continue;
+            }
             System.out.println("MPHKA STO MIDDLE");
 
             System.out.println("Group Name: " + newGroup2.getGroupName());

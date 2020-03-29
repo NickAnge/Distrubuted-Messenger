@@ -47,7 +47,7 @@ public class GroupManager {
         GroupManager groupManager = new GroupManager();
 
         try {
-            ServerSocket Tcp = new ServerSocket(0);
+
             while(true){
                 System.out.println("Waiting For new Apps...");
                 MainThreadSocket = new MulticastSocket(MultiCastPort);
@@ -57,6 +57,7 @@ public class GroupManager {
                 DatagramPacket packet = new DatagramPacket(msg,msg.length);
                 MainThreadSocket.setSoTimeout(1000);
                 try{
+                    ServerSocket Tcp = new ServerSocket(0);
                     MainThreadSocket.receive(packet);
                     System.out.println("New app request connection...");
                     String msg1 = new String(packet.getAddress()+ " "+ Tcp.getLocalPort());
@@ -218,7 +219,8 @@ public class GroupManager {
                 System.out.println("send GroupView");
                 Message newView = new Message("GroupView",temp);
                 this.informTheGroup(temp,newView,NewMember.getName());
-                sendNewMessageToSocket(NewMember.getAppSocket(),temp);
+                Message mesg = new Message(null,temp);
+                sendNewMessageToSocket(NewMember.getAppSocket(),mesg);
                 break;
             } else {
                 flag = 1;
@@ -236,8 +238,10 @@ public class GroupManager {
             NewGroup.getMembers().add(NewMember);
 
             ListOfGroupsIntoManager.add(NewGroup);
+            Message mesg = new Message(null,NewGroup);
+
 //            this.ListOfGroupsIntoManager.put(temp,NewGroup);//Prosthikh kainourgias omadas sthn apothikh
-            sendNewMessageToSocket(socket,NewGroup);//apostolh new View
+            sendNewMessageToSocket(socket,mesg);//apostolh new View
         }
 
     }

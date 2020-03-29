@@ -31,25 +31,26 @@ public class Middleware implements IApi{
             String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" " + OurPort);
             System.out.println("Trying to send My info" + InfoManager.getCommunicationSock());
             sendMsgFromSocket(InfoManager.getCommunicationSock(),myInformation);
-
+            gSock++;
+//            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
+//            System.out.println("Middleware receiving new VIEW ");
+//            GroupInfo newGroup = (GroupInfo) in.readObject();
+////            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
 //
-            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
-            System.out.println("Middleware receiving new VIEW ");
-            GroupInfo newGroup = (GroupInfo) in.readObject();
-//            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
-
-            gSock ++;
-            Groups.put(gSock,newGroup);
-
-
-            System.out.println("Group Name: " + newGroup.getGroupName());
-            for(int i = 0;i <newGroup.getMembers().size();i++){
-                System.out.println("Name: "+newGroup.getMembers().get(i).getName());
-                System.out.println("Address: "+ newGroup.getMembers().get(i).getMemberAddress() );
-                System.out.println("Port:"+newGroup.getMembers().get(0).getMemberPort());
-
-
-            }
+//            gSock ++;
+//            Groups.put(gSock,newGroup);
+//
+//
+//            System.out.println("Group Name: " + newGroup.getGroupName());
+//            for(int i = 0;i <newGroup.getMembers().size();i++){
+//                System.out.println("Name: "+newGroup.getMembers().get(i).getName());
+//                System.out.println("Address: "+ newGroup.getMembers().get(i).getMemberAddress() );
+//                System.out.println("Port:"+newGroup.getMembers().get(0).getMemberPort());
+//
+//
+//            }
+//
+//
 
 //            Thread.sleep(20000);
 
@@ -63,7 +64,7 @@ public class Middleware implements IApi{
 //
 //
 //            }
-        } catch (IOException | ClassNotFoundException e ) {
+        } catch (Exception  e ) {
             e.printStackTrace();
 
         }
@@ -99,18 +100,19 @@ public class Middleware implements IApi{
 
     public Object getViewFromSocket(Socket socket)   {
 
-        GroupInfo newVIew = null;
+        GroupInfo group = null;
         try {
 //            socket.setSoTimeout(500);
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             System.out.println("Middleware receiving new VIEW ");
-            newVIew = (GroupInfo) in.readObject();
+            Message newView = (Message) in.readObject();
+            group = newView.getView();
 
         } catch (IOException | ClassNotFoundException e) {
 //            return null;
         }
 
-        return  newVIew;
+        return  group;
     }
 
 
