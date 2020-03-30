@@ -1,10 +1,8 @@
 import java.io.*;
 import java.net.*;
 import java.security.acl.Group;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Semaphore;
 
 public class Middleware implements IApi{
     GroupManagerInfo InfoManager;
@@ -12,6 +10,12 @@ public class Middleware implements IApi{
     String OursAddress;
     int checkValue;
     int OurPort;
+    HashMap<Integer,GroupInfo> middlewareTeamsBuffer;
+    List<Message> receiveBuffer;
+    List<Message> sendBuffer;
+    Thread middlewareThread;
+    int teams ;
+    public  final Object lock;
 
     HashMap<Integer,GroupInfo> Groups;
 
@@ -20,50 +24,39 @@ public class Middleware implements IApi{
 
         Groups = new HashMap<Integer,GroupInfo>();
         InfoManager = new GroupManagerInfo(null);
+        receiveBuffer = new ArrayList<Message>();
         discoverGroupManager();
-
         gSock =0;
+        teams = 0;
+        lock = new Object();
+        middlewareTeamsBuffer = new HashMap<Integer, GroupInfo>();
+        middlewareThread = new Thread(new MiddlewareJob());
+        middlewareThread.start();
     }
 
     @Override
-    public int grp_join(String grpName, String myId) {
+    public int grp_join(String grpName, String myId,Message firstView) {
         try {
             String myInformation = new String(grpName +" " + myId + " "+ OursAddress +" " + OurPort);
             System.out.println("Trying to send My info" + InfoManager.getCommunicationSock());
             sendMsgFromSocket(InfoManager.getCommunicationSock(),myInformation);
-            gSock++;
-//            ObjectInputStream in = new ObjectInputStream(InfoManager.getCommunicationSock().getInputStream());
-//            System.out.println("Middleware receiving new VIEW ");
-//            GroupInfo newGroup = (GroupInfo) in.readObject();
-////            GroupInfo newGroup = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
-//
-//            gSock ++;
-//            Groups.put(gSock,newGroup);
-//
-//
-//            System.out.println("Group Name: " + newGroup.getGroupName());
-//            for(int i = 0;i <newGroup.getMembers().size();i++){
-//                System.out.println("Name: "+newGroup.getMembers().get(i).getName());
-//                System.out.println("Address: "+ newGroup.getMembers().get(i).getMemberAddress() );
-//                System.out.println("Port:"+newGroup.getMembers().get(0).getMemberPort());
-//
-//
-//            }
-//
-//
+//            gSock++;
 
-//            Thread.sleep(20000);
+            while(true){
+                if(gSock != 0){
+                    break;
+                }
+                synchronized (lock) {
+                    lock.wait();
+                }
+            }
+            System.out.println("JOIN" + gSock);
+            firstView = new Message("Add",middlewareTeamsBuffer.get(gSock));
+            System.out.println(middlewareTeamsBuffer.get(gSock).getGroupName());
 
-//            GroupInfo newGroup2 = (GroupInfo) this.getViewFromSocket(InfoManager.getCommunicationSock());
-//
-//            System.out.println("Group Name: " + newGroup2.getGroupName());
-//            for(int i = 0;i <newGroup2.getMembers().size();i++){
-//                System.out.println("Name: "+newGroup2.getMembers().get(i).getName());
-//                System.out.println("Address: "+ newGroup2.getMembers().get(i).getMemberAddress() );
-//                System.out.println("Port:"+newGroup2.getMembers().get(0).getMemberPort());
-//
-//
-//            }
+            int returValue = gSock;
+            gSock = 0;
+            return returValue;
         } catch (Exception  e ) {
             e.printStackTrace();
 
@@ -107,7 +100,6 @@ public class Middleware implements IApi{
             System.out.println("Middleware receiving new VIEW ");
             Message newView = (Message) in.readObject();
             group = newView.getView();
-
         } catch (IOException | ClassNotFoundException e) {
 //            return null;
         }
@@ -188,6 +180,44 @@ public class Middleware implements IApi{
         checkValue =1;
         return ;
     }
+
+    class MiddlewareJob extends Thread {
+
+
+        @Override
+        public void run() {
+            while(true){
+                    System.out.println("CONINU");
+                    GroupInfo newGroup2 = (GroupInfo) getViewFromSocket(InfoManager.getCommunicationSock());
+//                    Set<Integer> keys = middlewareTeamsBuffer.keySet();
+                    teams = newGroup2.getId();
+                    if(!middlewareTeamsBuffer.containsKey(teams)){
+                        gSock = teams;
+                    }
+                    middlewareTeamsBuffer.put(teams,newGroup2);
+
+
+                    System.out.println("NEW VIEW STO MIDDLEWARE BUFFER");
+//                    teams = middlewareTeamsBuffer.size();
+                    System.out.println("PAW NA PROSTHRESW TO NEO TEAM"+ teams + middlewareTeamsBuffer.get(teams).getGroupName());
+
+                    Set<Integer> keys = middlewareTeamsBuffer.keySet();
+                    for(Integer req: keys){
+                        System.out.println(middlewareTeamsBuffer.get(req).getGroupName());
+                        System.out.println(middlewareTeamsBuffer.get(req).getId());
+                        for(int i = 0; i <middlewareTeamsBuffer.get(req).getMembers().size();i++){
+                            System.out.println(middlewareTeamsBuffer.get(req).getMembers().get(i).getName());
+                        }
+                    }
+                    System.out.println("MPHKA STO MIDDLE");
+
+                    synchronized (lock){
+                        lock.notify();
+                    }
+            }
+
+        }
+    }
 }
 
 class GroupManagerInfo{
@@ -204,28 +234,4 @@ class GroupManagerInfo{
     public GroupManagerInfo(Socket communicationSock) {
         CommunicationSock = communicationSock;
     }
-//    InetAddress ManagerAddress;
-//    int ManagerPort;
-//
-//    public GroupManagerInfo(InetAddress managerAddress, int managerPort) {
-//        ManagerAddress = managerAddress;
-//        ManagerPort = managerPort;
-//    }
-//
-//    public InetAddress getManagerAddress() {
-//        return ManagerAddress;
-//    }
-//
-//    public void setManagerAddress(InetAddress managerAddress) {
-//        ManagerAddress = managerAddress;
-//    }
-//
-//    public int getManagerPort() {
-//        return ManagerPort;
-//    }
-//
-//    public void setManagerPort(int managerPort) {
-//        ManagerPort = managerPort;
-//    }
-
 }

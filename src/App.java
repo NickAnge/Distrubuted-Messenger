@@ -1,4 +1,4 @@
-import java.util.Scanner;
+import java.util.*;
 
 public class App{
     public static Middleware middle;
@@ -6,8 +6,9 @@ public class App{
     public static  Thread AppClient;
     public static Middleware  appMiddleware;
 
+
     public static void main(String[] args) {
-        MiddleWareClient = new Thread(new AppMiddle());
+//        MiddleWareClient = new Thread(new AppMiddle());
         AppClient = new Thread(new Application());
 
         AppClient.start();
@@ -25,6 +26,12 @@ class Application extends Thread{
     public static final String RESET = "\033[0m";  // Text Reset
     public static final String RED = "\033[0;31m";     // RED
 
+    public List<Integer> teams;
+    HashMap<Integer,GroupInfo> AllViews;
+    public Application(){
+        teams = new ArrayList<>();
+        AllViews = new HashMap<>();
+    }
 
 
     @Override
@@ -46,7 +53,7 @@ class Application extends Thread{
         String name = in.next();
         String Group;
         int Sock = 0;
-        App.MiddleWareClient.start();
+//        App.MiddleWareClient.start();
 
         while(true) {
             System.out.println(RED_BOLD + "MENU: ");
@@ -61,9 +68,15 @@ class Application extends Thread{
                     System.out.print(CYAN_BOLD + "GROUP: ");
                     Group = in.next();
                     System.out.println(RESET);
-                    Sock = App.appMiddleware.grp_join(Group, name);
+                    Message newView = new Message("",null,"");
+                    Sock = App.appMiddleware.grp_join(Group, name,newView);
+                    teams.add(Sock);
+                    AllViews.put(Sock,newView.getView());
+                    Set<Integer> keys = AllViews.keySet();
+                    for(Integer req: keys){
+                        System.out.println(App.appMiddleware.middlewareTeamsBuffer.get(req).getGroupName());
+                    }
                     System.out.println(Sock);
-
 
                     break;
                 case 2:
@@ -71,8 +84,17 @@ class Application extends Thread{
                     Group = in.next();
                     break;
                 case 3:
-                    System.out.println(RED_BOLD + "BYE BYE" + Sock);
-                    App.appMiddleware.grp_leave(Sock);
+                    if(teams.size() == 0){
+                        System.out.println("NO GROUPS EXIST ... TRY TO CONNECT TO ONE");
+                        break;
+                    }
+                    System.out.println(RED_BOLD + "WHICH ONE");
+                    for(int i= 0 ; i <teams.size(); i++){
+                        System.out.print(teams.get(i)+ " ");
+                    }
+                    int group = in.nextInt();
+
+                    App.appMiddleware.grp_leave(group);
                     return;
 //                    break;
             }
@@ -80,32 +102,6 @@ class Application extends Thread{
         }
 
 
-
-    }
-}
-
-class AppMiddle extends Thread {
-    @Override
-    public void run() {
-
-        while(true){
-            System.out.println("CONINU");
-            GroupInfo newGroup2 = (GroupInfo) App.appMiddleware.getViewFromSocket(App.appMiddleware.InfoManager.getCommunicationSock());
-            if(newGroup2 == null){
-//                App.AppClient.
-                continue;
-            }
-            System.out.println("MPHKA STO MIDDLE");
-
-            System.out.println("Group Name: " + newGroup2.getGroupName());
-            for(int i = 0;i <newGroup2.getMembers().size();i++){
-                System.out.println("Name: "+newGroup2.getMembers().get(i).getName());
-                System.out.println("Address: "+ newGroup2.getMembers().get(i).getMemberAddress() );
-                System.out.println("Port:"+newGroup2.getMembers().get(0).getMemberPort());
-
-
-            }
-        }
 
     }
 }

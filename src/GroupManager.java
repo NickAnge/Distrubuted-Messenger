@@ -4,12 +4,13 @@ import java.net.*;
 import java.util.*;
 
 public class GroupManager {
-    private static String MultiCastAddress = "230.0.0.0";
-    private static int MultiCastPort = 4321;
+    public String MultiCastAddress = "230.0.0.0";
+    public int MultiCastPort = 4321;
 
-//    private HashMap<Integer,GroupInfo> ListOfGroupsIntoManager;
+
+    //    private HashMap<Integer,GroupInfo> ListOfGroupsIntoManager;
     private List<GroupInfo> ListOfGroupsIntoManager;
-    private  int numberOfGroups;
+    private int numberOfGroups;
     private List<Socket> NoTeamYet;
 
     public List<Socket> getNoTeamYet() {
@@ -20,11 +21,11 @@ public class GroupManager {
         NoTeamYet = noTeamYet;
     }
 
-    public  int getNumberOfGroups() {
+    public int getNumberOfGroups() {
         return numberOfGroups;
     }
 
-    public  void setNumberOfGroups(int numberOfGroups) {
+    public void setNumberOfGroups(int numberOfGroups) {
         this.numberOfGroups = numberOfGroups;
     }
 
@@ -39,110 +40,114 @@ public class GroupManager {
     public GroupManager() {
         ListOfGroupsIntoManager = new ArrayList<GroupInfo>();
         numberOfGroups = 0;
-        NoTeamYet = new ArrayList<>();
+        NoTeamYet = new ArrayList<Socket>();
     }
+//    public static void main(String[] args) {
+//        MulticastSocket MainThreadSocket;
+//        GroupManager groupManager = new GroupManager();
+//
+//        NewApps = new Thread(new RecieveNewApps());
+////        ReceiveErrorsFromClients = new Thread(new Recieve)
+//
+//
+//        try {
+//            while(true){
+//                System.out.println("Waiting For new Apps...");
+//                MainThreadSocket = new MulticastSocket(MultiCastPort);
+//                InetAddress group = InetAddress.getByName(MultiCastAddress);
+//                MainThreadSocket.joinGroup(group);
+//                byte[] msg = new byte[1024];
+//                DatagramPacket packet = new DatagramPacket(msg,msg.length);
+//                MainThreadSocket.setSoTimeout(1000);
+//                try{
+//                    ServerSocket Tcp = new ServerSocket(0);
+//                    MainThreadSocket.receive(packet);
+//                    System.out.println("New app request connection...");
+//                    String msg1 = new String(packet.getAddress()+ " "+ Tcp.getLocalPort());
+//                    byte[] bytemsg = msg1.getBytes();
+//                    System.out.println("Sennding the Tcp_info,port" +Tcp.getLocalPort());
+//                    DatagramSocket UdpSocket = new DatagramSocket();
+//                    DatagramPacket packet2 = new DatagramPacket(bytemsg,bytemsg.length,packet.getAddress(),packet.getPort());
+//
+//                    UdpSocket.send(packet2);
+//
+//                    Socket AppCommunicationInfo = Tcp.accept();
+//                    System.out.println("App accepted the communication");
+//                    System.out.println("Adress "+ AppCommunicationInfo.getInetAddress().getHostAddress() + "Port " + AppCommunicationInfo.getPort());
+////                    System.out.println("Port of communication with other members1" + packet2.getPort());
+//
+//                    String MsgRequest = groupManager.getMsgFromSocket(AppCommunicationInfo);
+//
+//                    if(MsgRequest != null){
+//                        groupManager.addMemberToGroups(AppCommunicationInfo,MsgRequest);
+//                    }
+//                    else {
+//                        groupManager.getNoTeamYet().add(AppCommunicationInfo);
+//                    }
+//                    System.out.println("No info about app came, checking the storage");
+//                    UdpSocket.close();
+//                }
+//                catch (SocketTimeoutException ex){
+//                    System.out.println("Didn't come new App -->> going to check for other Messages");
+//
+//                }
+//
+//                if(groupManager.getNoTeamYet().size() != 0){
+//                    for(int counter = 0;counter < groupManager.getNoTeamYet().size();counter++){
+////                    Message MsgRequest = (Message) groupManager.getNewMessageFromSocket(groupManager.getNoTeamYet().get(counter));
+//
+//                        String MsgRequest = groupManager.getMsgFromSocket(groupManager.getNoTeamYet().get(counter));
+//                        if(MsgRequest == null){
+//                            continue;
+//                        }
+//                        else if(MsgRequest.equals("Leave")){
+//                            groupManager.getNoTeamYet().remove(counter);
+//
+//                        }
+//                        else {
+//                            groupManager.addMemberToGroups(groupManager.getNoTeamYet().get(counter),MsgRequest);
+//                            groupManager.getNoTeamYet().remove(counter);
+//                        }
+//                    }
+//                }
+//
+//                Iterator<GroupInfo> it = groupManager.getListOfGroupsIntoManager().iterator();
+//
+//                int tim = groupManager.getListOfGroupsIntoManager().size();
+//                for(int j = 0; j<tim ; j++) {
+//                    GroupInfo temp = groupManager.getListOfGroupsIntoManager().get(j);
+//                    for (int i = 0; i < temp.getMembers().size(); i++) {
+//                        String data = groupManager.getMsgFromSocket(temp.getMembers().get(i).getAppSocket());
+//                        if (data == null) {
+//                            continue;
+//                        } else if (data.equals("Leave")) {
+//                            EachMemberInfo member = temp.getMembers().get(i);
+//                            temp.getMembers().remove(member);
+//                            if(member.getAppSocket().isConnected())
+//                            groupManager.getNoTeamYet().add(member.getAppSocket());
+//                            if (temp.getMembers().size() == 0) {
+//                                groupManager.ListOfGroupsIntoManager.remove(temp);
+//                                break;
+//                            } else {
+//                                Message newView = new Message("GroupView", temp);
+//                                groupManager.informTheGroup(temp, newView, member.getName());
+//                            }
+//                        } else {
+//                            System.out.println(temp.getMembers().get(i).getName() + "Want to be added into new Group");
+//                            groupManager.addMemberToGroups(temp.getMembers().get(i).getAppSocket(), data);
+//                        }
+//                    }
+//                }
+//                groupManager.printList(groupManager.ListOfGroupsIntoManager);
+//
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//    }
 
-    public static void main(String[] args) {
-        MulticastSocket MainThreadSocket;
-        GroupManager groupManager = new GroupManager();
 
-        try {
-
-            while(true){
-                System.out.println("Waiting For new Apps...");
-                MainThreadSocket = new MulticastSocket(MultiCastPort);
-                InetAddress group = InetAddress.getByName(MultiCastAddress);
-                MainThreadSocket.joinGroup(group);
-                byte[] msg = new byte[1024];
-                DatagramPacket packet = new DatagramPacket(msg,msg.length);
-                MainThreadSocket.setSoTimeout(1000);
-                try{
-                    ServerSocket Tcp = new ServerSocket(0);
-                    MainThreadSocket.receive(packet);
-                    System.out.println("New app request connection...");
-                    String msg1 = new String(packet.getAddress()+ " "+ Tcp.getLocalPort());
-                    byte[] bytemsg = msg1.getBytes();
-                    System.out.println("Sennding the Tcp_info,port" +Tcp.getLocalPort());
-                    DatagramSocket UdpSocket = new DatagramSocket();
-                    DatagramPacket packet2 = new DatagramPacket(bytemsg,bytemsg.length,packet.getAddress(),packet.getPort());
-
-                    UdpSocket.send(packet2);
-
-                    Socket AppCommunicationInfo = Tcp.accept();
-                    System.out.println("App accepted the communication");
-                    System.out.println("Adress "+ AppCommunicationInfo.getInetAddress().getHostAddress() + "Port " + AppCommunicationInfo.getPort());
-//                    System.out.println("Port of communication with other members1" + packet2.getPort());
-
-                    String MsgRequest = groupManager.getMsgFromSocket(AppCommunicationInfo);
-
-                    if(MsgRequest != null){
-                        groupManager.addMemberToGroups(AppCommunicationInfo,MsgRequest);
-                    }
-                    else {
-                        groupManager.getNoTeamYet().add(AppCommunicationInfo);
-                    }
-                    System.out.println("No info about app came, checking the storage");
-                    UdpSocket.close();
-                }
-                catch (SocketTimeoutException ex){
-                    System.out.println("Didn't come new App -->> going to check for other Messages");
-
-                }
-
-                if(groupManager.getNoTeamYet().size() != 0){
-                    for(int counter = 0;counter < groupManager.getNoTeamYet().size();counter++){
-//                    Message MsgRequest = (Message) groupManager.getNewMessageFromSocket(groupManager.getNoTeamYet().get(counter));
-
-                        String MsgRequest = groupManager.getMsgFromSocket(groupManager.getNoTeamYet().get(counter));
-                        if(MsgRequest == null){
-                            continue;
-                        }
-                        else if(MsgRequest.equals("Leave")){
-                            groupManager.getNoTeamYet().remove(counter);
-
-                        }
-                        else {
-                            groupManager.addMemberToGroups(groupManager.getNoTeamYet().get(counter),MsgRequest);
-                            groupManager.getNoTeamYet().remove(counter);
-                        }
-                    }
-                }
-
-                Iterator<GroupInfo> it = groupManager.getListOfGroupsIntoManager().iterator();
-
-                int tim = groupManager.getListOfGroupsIntoManager().size();
-                for(int j = 0; j<tim ; j++) {
-                    GroupInfo temp = groupManager.getListOfGroupsIntoManager().get(j);
-                    for (int i = 0; i < temp.getMembers().size(); i++) {
-                        String data = groupManager.getMsgFromSocket(temp.getMembers().get(i).getAppSocket());
-                        if (data == null) {
-                            continue;
-                        } else if (data.equals("Leave")) {
-                            EachMemberInfo member = temp.getMembers().get(i);
-                            temp.getMembers().remove(member);
-                            if(member.getAppSocket().isConnected())
-                            groupManager.getNoTeamYet().add(member.getAppSocket());
-                            if (temp.getMembers().size() == 0) {
-                                groupManager.ListOfGroupsIntoManager.remove(temp);
-                                break;
-                            } else {
-                                Message newView = new Message("GroupView", temp);
-                                groupManager.informTheGroup(temp, newView, member.getName());
-                            }
-                        } else {
-                            System.out.println(temp.getMembers().get(i).getName() + "Want to be added into new Group");
-                            groupManager.addMemberToGroups(temp.getMembers().get(i).getAppSocket(), data);
-                        }
-                    }
-                }
-                groupManager.printList(groupManager.ListOfGroupsIntoManager);
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
 
 
     public  String getMsgFromSocket(Socket socket){
@@ -217,7 +222,7 @@ public class GroupManager {
                 temp.getMembers().add(NewMember);
                 flag = 0;
                 System.out.println("send GroupView");
-                Message newView = new Message("GroupView",temp);
+                Message newView = new Message("Add",temp);
                 this.informTheGroup(temp,newView,NewMember.getName());
                 Message mesg = new Message(null,temp);
                 sendNewMessageToSocket(NewMember.getAppSocket(),mesg);
@@ -270,3 +275,5 @@ public class GroupManager {
         }
     }
 }
+
+

@@ -122,6 +122,12 @@ class Message implements  Serializable {
         Message = message;
     }
 
+    public Message(String type, GroupInfo view, String message) {
+        this.type = type;
+        View = view;
+        Message = message;
+    }
+
     public Message(String type, GroupInfo view) {
         this.type = type;
         View = view;
