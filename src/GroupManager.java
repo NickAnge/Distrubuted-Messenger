@@ -11,14 +11,14 @@ public class GroupManager {
     //    private HashMap<Integer,GroupInfo> ListOfGroupsIntoManager;
     private List<GroupInfo> ListOfGroupsIntoManager;
     private int numberOfGroups;
-    private List<Socket> NoTeamYet;
+    private List<Socket> activeMembers;
 
-    public List<Socket> getNoTeamYet() {
-        return NoTeamYet;
+    public List<Socket> getActiveMembers() {
+        return activeMembers;
     }
 
-    public void setNoTeamYet(List<Socket> noTeamYet) {
-        NoTeamYet = noTeamYet;
+    public void setActiveMembers(List<Socket> activeMembers) {
+        activeMembers = activeMembers;
     }
 
     public int getNumberOfGroups() {
@@ -40,7 +40,7 @@ public class GroupManager {
     public GroupManager() {
         ListOfGroupsIntoManager = new ArrayList<GroupInfo>();
         numberOfGroups = 0;
-        NoTeamYet = new ArrayList<Socket>();
+        activeMembers = new ArrayList<Socket>();
     }
 //    public static void main(String[] args) {
 //        MulticastSocket MainThreadSocket;
@@ -151,7 +151,7 @@ public class GroupManager {
 
 
     public  String getMsgFromSocket(Socket socket){
-        String data = null;
+        String data = "NoMessage";
 
         try {
             socket.setSoTimeout(500);
@@ -160,7 +160,7 @@ public class GroupManager {
             data = in.readLine();
             System.out.println("\r\nMessage from " + socket.getInetAddress().getHostAddress() + ": " + data);
         } catch (SocketTimeoutException e) {
-            return null;
+            return data;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -273,6 +273,48 @@ public class GroupManager {
             System.out.println("Sends new VIew to Members");
             this.sendNewMessageToSocket(group.getMembers().get(i).getAppSocket(),newView);
         }
+    }
+
+    public GroupInfo findMembersGroup(int idOfGroup){
+        Iterator<GroupInfo> it = ListOfGroupsIntoManager.iterator();
+
+        while(it.hasNext()){
+            GroupInfo temp = it.next();
+
+            if(temp.getId() == idOfGroup){
+                return temp;
+            }
+//            for(int i =0;i<temp.getMembers().size();i++){
+//                if(temp.getMembers().get(i).getAppSocket().equals(specificSocket)){
+//                    return  temp;
+//                }
+//            }
+        }
+        return null;
+    }
+
+    public  void removeFromAllGroups(Socket specificSocket){
+        Iterator<GroupInfo> it = ListOfGroupsIntoManager.iterator();
+        int tim2 = ListOfGroupsIntoManager.size();
+        for(int j =0;j<tim2;j++){
+            GroupInfo temp = ListOfGroupsIntoManager.get(j);
+            int tim = temp.getMembers().size();
+            for(int i =0;i<tim;i++){
+                EachMemberInfo member = temp.getMembers().get(i);
+                if(member.getAppSocket().equals(specificSocket)){
+                    temp.getMembers().remove(member);
+
+                    if(temp.getMembers().size() == 0){
+                        ListOfGroupsIntoManager.remove(temp);
+                    }
+                    Message view = new Message("Error",temp);
+                    informTheGroup(temp,view,member.getName());
+                    break;
+                }
+            }
+        }
+
+        return;
     }
 }
 

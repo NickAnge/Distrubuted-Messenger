@@ -67,8 +67,8 @@ public class Middleware implements IApi{
     @Override
     public int grp_leave(int gSock) {
 
-        String msg = "Leave";
-
+        String msg = "Leave " + gSock;
+        System.out.println(msg);
         sendMsgFromSocket(InfoManager.getCommunicationSock(),msg);
         Groups.remove(gSock);
         Set <Integer>  Keys = Groups.keySet();

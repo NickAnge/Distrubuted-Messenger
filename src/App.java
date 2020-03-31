@@ -93,7 +93,7 @@ class Application extends Thread{
                         System.out.print(teams.get(i)+ " ");
                     }
                     int group = in.nextInt();
-
+                    AllViews.remove(group);
                     App.appMiddleware.grp_leave(group);
                     return;
 //                    break;
