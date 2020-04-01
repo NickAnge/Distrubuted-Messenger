@@ -28,7 +28,12 @@ public class GroupThreads {
                     if (MsgRequest == null) {
                         System.out.println("This App disconnected so we close it");
                         groupManager.removeFromAllGroups(groupManager.getActiveMembers().get(counter));
+                        System.out.println("Perasa");
                         groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
+                        groupManager.printList(groupManager.getListOfGroupsIntoManager());
+                        if(groupManager.getActiveMembers().size()!= tim){
+                            break;
+                        }
                         continue;
 
                     } else if (MsgRequest.equals("NoMessage")) {

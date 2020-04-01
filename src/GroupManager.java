@@ -224,8 +224,8 @@ public class GroupManager {
                 System.out.println("send GroupView");
                 Message newView = new Message("Add",temp);
                 this.informTheGroup(temp,newView,NewMember.getName());
-                Message mesg = new Message(null,temp);
-                sendNewMessageToSocket(NewMember.getAppSocket(),mesg);
+//                Message mesg = new Message("Add",temp);
+                sendNewMessageToSocket(NewMember.getAppSocket(),newView);
                 break;
             } else {
                 flag = 1;
@@ -243,7 +243,7 @@ public class GroupManager {
             NewGroup.getMembers().add(NewMember);
 
             ListOfGroupsIntoManager.add(NewGroup);
-            Message mesg = new Message(null,NewGroup);
+            Message mesg = new Message("Add",NewGroup);
 
 //            this.ListOfGroupsIntoManager.put(temp,NewGroup);//Prosthikh kainourgias omadas sthn apothikh
             sendNewMessageToSocket(socket,mesg);//apostolh new View
@@ -284,35 +284,44 @@ public class GroupManager {
             if(temp.getId() == idOfGroup){
                 return temp;
             }
-//            for(int i =0;i<temp.getMembers().size();i++){
-//                if(temp.getMembers().get(i).getAppSocket().equals(specificSocket)){
-//                    return  temp;
-//                }
-//            }
         }
         return null;
     }
 
     public  void removeFromAllGroups(Socket specificSocket){
+        System.out.println("MPHKA mesa sto remove all");
+
         Iterator<GroupInfo> it = ListOfGroupsIntoManager.iterator();
         int tim2 = ListOfGroupsIntoManager.size();
+
         for(int j =0;j<tim2;j++){
             GroupInfo temp = ListOfGroupsIntoManager.get(j);
+            if(temp == null){
+                break;
+            }
             int tim = temp.getMembers().size();
             for(int i =0;i<tim;i++){
                 EachMemberInfo member = temp.getMembers().get(i);
                 if(member.getAppSocket().equals(specificSocket)){
                     temp.getMembers().remove(member);
+                    System.out.println("MPHKA mesa sto remove all");
 
                     if(temp.getMembers().size() == 0){
                         ListOfGroupsIntoManager.remove(temp);
+                        break;
                     }
                     Message view = new Message("Error",temp);
                     informTheGroup(temp,view,member.getName());
                     break;
                 }
             }
+            if(ListOfGroupsIntoManager.size() < tim2) {
+                tim2--;
+                j--;
+            }
         }
+
+
 
         return;
     }

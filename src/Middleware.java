@@ -1,3 +1,4 @@
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.*;
 import java.security.acl.Group;
@@ -11,24 +12,28 @@ public class Middleware implements IApi{
     int checkValue;
     int OurPort;
     HashMap<Integer,GroupInfo> middlewareTeamsBuffer;
-    List<Message> receiveBuffer;
+    List<UdpMessage> receiveBuffer;
+    List<Message> receiveMiddle;
     List<Message> sendBuffer;
     Thread middlewareThread;
     int teams ;
     public  final Object lock;
-
+    int seqNumber;
+    List<Integer> mids;
     HashMap<Integer,GroupInfo> Groups;
 
     int gSock;
     public Middleware() {
-
         Groups = new HashMap<Integer,GroupInfo>();
         InfoManager = new GroupManagerInfo(null);
-        receiveBuffer = new ArrayList<Message>();
+        receiveBuffer = new ArrayList<UdpMessage>();
         discoverGroupManager();
         gSock =0;
         teams = 0;
+        seqNumber =0;
         lock = new Object();
+        mids = new ArrayList<>();
+        receiveMiddle = new ArrayList<>();
         middlewareTeamsBuffer = new HashMap<Integer, GroupInfo>();
         middlewareThread = new Thread(new MiddlewareJob());
         middlewareThread.start();
@@ -71,6 +76,7 @@ public class Middleware implements IApi{
         System.out.println(msg);
         sendMsgFromSocket(InfoManager.getCommunicationSock(),msg);
         Groups.remove(gSock);
+
         Set <Integer>  Keys = Groups.keySet();
 
         for(Integer req : Keys){
@@ -82,29 +88,53 @@ public class Middleware implements IApi{
 
     @Override
     public int grp_send(int gSock, String msg, int len, int total) {
+
+        seqNumber++;
+        UdpMessage newMessage = new UdpMessage(msg,seqNumber,OurPort,gSock);
+
+        BM_send(newMessage,gSock);
+
         return 0;
     }
 
     @Override
-    public int grp_recv(int gSock, int type, String msg, int len, int block) {
+    public int grp_recv(int gSock, Message receiveMsg, int block) {
+
+        if(receiveMiddle.size() >0){
+//            UdpMessage k  = receiveMiddle.get(0).getMessage();
+            System.out.println("ΛΑΜΒΑΝΩ ΜΗΝΥΜΑ : " + receiveMiddle);
+//            receiveMsg = new Message("",receiveMiddle.get(0).getView(),receiveMiddle.get(0).getMessage());
+
+            if(receiveMiddle.get(0).getMessage() != null){
+                receiveMsg.setMessage(receiveMiddle.get(0).getMessage());
+            }
+            else if (receiveMiddle.get(0).getView() != null){
+                receiveMsg.setView(receiveMiddle.get(0).getView());
+            }
+
+            receiveMsg.setType(receiveMiddle.get(0).getType());
+//            System.out.println(receiveMsg.getMessage().getMessage());
+            receiveMiddle.remove(0);
+        }
+
         return 0;
     }
 
 
     public Object getViewFromSocket(Socket socket)   {
-
-        GroupInfo group = null;
+        Message newView = null;
         try {
-//            socket.setSoTimeout(500);
+            socket.setSoTimeout(500);
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             System.out.println("Middleware receiving new VIEW ");
-            Message newView = (Message) in.readObject();
-            group = newView.getView();
+            newView = (Message) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
-//            return null;
+            Message error = new Message("noMessage",null,null);
+            return error;
         }
+        System.out.println("Persasa apo edw "+newView.getType());
 
-        return  group;
+        return  newView;
     }
 
 
@@ -183,39 +213,123 @@ public class Middleware implements IApi{
 
     class MiddlewareJob extends Thread {
 
-
         @Override
         public void run() {
             while(true){
-                    System.out.println("CONINU");
-                    GroupInfo newGroup2 = (GroupInfo) getViewFromSocket(InfoManager.getCommunicationSock());
-//                    Set<Integer> keys = middlewareTeamsBuffer.keySet();
-                    teams = newGroup2.getId();
-                    if(!middlewareTeamsBuffer.containsKey(teams)){
-                        gSock = teams;
-                    }
-                    middlewareTeamsBuffer.put(teams,newGroup2);
+                    Message newGroup2 = (Message) getViewFromSocket(InfoManager.getCommunicationSock());
 
+                    if(!newGroup2.getType().equals("noMessage")){
+                        System.out.println("mesa ");
+                        teams = newGroup2.getView().getId();
+                        if(!middlewareTeamsBuffer.containsKey(teams)){
+                            gSock = teams;
 
-                    System.out.println("NEW VIEW STO MIDDLEWARE BUFFER");
-//                    teams = middlewareTeamsBuffer.size();
-                    System.out.println("PAW NA PROSTHRESW TO NEO TEAM"+ teams + middlewareTeamsBuffer.get(teams).getGroupName());
-
-                    Set<Integer> keys = middlewareTeamsBuffer.keySet();
-                    for(Integer req: keys){
-                        System.out.println(middlewareTeamsBuffer.get(req).getGroupName());
-                        System.out.println(middlewareTeamsBuffer.get(req).getId());
-                        for(int i = 0; i <middlewareTeamsBuffer.get(req).getMembers().size();i++){
-                            System.out.println(middlewareTeamsBuffer.get(req).getMembers().get(i).getName());
                         }
-                    }
-                    System.out.println("MPHKA STO MIDDLE");
+                        else{
+                            System.out.println("Mphka sta epomena view");
+                            receiveMiddle.add(newGroup2);
+                        }
+                        middlewareTeamsBuffer.put(teams,newGroup2.getView());
 
-                    synchronized (lock){
-                        lock.notify();
+
+                        System.out.println("NEW VIEW STO MIDDLEWARE BUFFER");
+//                    teams = middlewareTeamsBuffer.size();
+                        System.out.println("PAW NA PROSTHRESW TO NEO TEAM"+ teams + middlewareTeamsBuffer.get(teams).getGroupName());
+
+
+                        Set<Integer> keys = middlewareTeamsBuffer.keySet();
+                        for(Integer req: keys){
+                            System.out.println(middlewareTeamsBuffer.get(req).getGroupName());
+                            System.out.println(middlewareTeamsBuffer.get(req).getId());
+                            for(int i = 0; i <middlewareTeamsBuffer.get(req).getMembers().size();i++){
+                                System.out.println(middlewareTeamsBuffer.get(req).getMembers().get(i).getName());
+                            }
+                        }
+                        System.out.println("MPHKA STO MIDDLE");
+
+                        synchronized (lock){
+                            lock.notify();
+                        }
+                        continue;
+                    }
+                    if(middlewareTeamsBuffer.size() > 0){
+//                        DatagramSocket UdpSocket = null;
+                        try {
+//                            UdpSocket = new DatagramSocket();
+                            byte[] newbuffer = new byte[1024];
+                            Discovery.setSoTimeout(1000);
+                            DatagramPacket packet = new DatagramPacket(newbuffer,newbuffer.length);
+
+                            Discovery.receive(packet);
+
+                            ByteArrayInputStream baos = new ByteArrayInputStream(newbuffer);
+                            ObjectInputStream oos = new ObjectInputStream(baos);
+
+                            UdpMessage receiveMessage = (UdpMessage) oos.readObject();
+
+                            System.out.println("Middleware received message" + receiveMessage.getMessage());
+                            BM_deliver(receiveMessage);
+
+
+                            for(int i =0;i <receiveBuffer.size();i++){
+                                System.out.println(receiveBuffer.get(i).getMessage());
+                            }
+
+                        } catch (SocketException e) {
+//                            System.out.println("PERASA APO");
+                            continue;
+//                            e.printStackTrace();
+                        } catch (IOException | ClassNotFoundException e) {
+//                            e.printStackTrace();
+                        }
                     }
             }
 
+        }
+    }
+
+    public void BM_send(UdpMessage msg,int groupId){
+        Iterator<EachMemberInfo> it = middlewareTeamsBuffer.get(groupId).getMembers().iterator();
+        DatagramSocket UdpSocket = null;
+
+        try {
+            UdpSocket = new DatagramSocket();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        while(it.hasNext()){
+            EachMemberInfo temp = it.next();
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(msg);
+                byte[] byteMsg = baos.toByteArray();
+                System.out.println("Sennding the Message to "+ temp.getName());
+
+                DatagramPacket packet2 = new DatagramPacket(byteMsg, byteMsg.length, InetAddress.getByName(temp.getMemberAddress()), temp.getMemberPort());
+                UdpSocket.send(packet2);
+//                System.out.println("Sending the Message to "+ temp.getName());
+
+            } catch (SocketTimeoutException | UnknownHostException e) {
+                continue;
+            } catch (IOException e) {
+                continue;
+            }
+
+        }
+    }
+    public void BM_deliver(UdpMessage receiveMessage){
+        if(!mids.contains(receiveMessage.getSeqNo())){
+            mids.add(receiveMessage.getSeqNo());
+            if(receiveMessage.getSenderPort() != OurPort){
+//                receiveMessage.setSenderPort(OurPort);
+                BM_send(receiveMessage,receiveMessage.getGroupId());
+            }
+
+            Message rec = new Message("",receiveMessage);
+            receiveMiddle.add(rec);
+//            receiveBuffer.add(receiveMessage);
         }
     }
 }

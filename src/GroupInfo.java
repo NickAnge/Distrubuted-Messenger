@@ -96,7 +96,15 @@ class EachMemberInfo implements Serializable {
 class Message implements  Serializable {
     private String type; //Add, Leave, GroupView
     private GroupInfo View;
-    private String Message;
+    private UdpMessage Message;
+
+    public UdpMessage getMessage() {
+        return Message;
+    }
+
+    public void setMessage(UdpMessage message) {
+        Message = message;
+    }
 
     public String getType() {
         return type;
@@ -114,15 +122,9 @@ class Message implements  Serializable {
         View = view;
     }
 
-    public String getMessage() {
-        return Message;
-    }
 
-    public void setMessage(String message) {
-        Message = message;
-    }
 
-    public Message(String type, GroupInfo view, String message) {
+    public Message(String type, GroupInfo view, UdpMessage message) {
         this.type = type;
         View = view;
         Message = message;
@@ -133,8 +135,55 @@ class Message implements  Serializable {
         View = view;
     }
 
-    public Message(String type, String message) {
+    public Message(String type, UdpMessage message) {
         this.type = type;
         Message = message;
+    }
+}
+
+class UdpMessage implements  Serializable{
+    private String Message;
+    private int seqNo;
+    private int senderPort;
+    private int groupId;
+
+    public UdpMessage(String message, int seqno,int senderPort,int groupId) {
+        Message = message;
+        seqNo = seqno;
+        this.senderPort = senderPort;
+        this.groupId = groupId;
+
+    }
+
+    public int getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(int groupId) {
+        this.groupId = groupId;
+    }
+
+    public int getSenderPort() {
+        return senderPort;
+    }
+
+    public void setSenderPort(int senderPort) {
+        this.senderPort = senderPort;
+    }
+
+    public String getMessage() {
+        return Message;
+    }
+
+    public void setMessage(String message) {
+        Message = message;
+    }
+
+    public int getSeqNo() {
+        return seqNo;
+    }
+
+    public void setSeqNo(int seqNo) {
+        this.seqNo = seqNo;
     }
 }

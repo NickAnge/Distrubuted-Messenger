@@ -5,6 +5,6 @@ public interface IApi {
     int grp_join(String grpName, String myId,Message firstView);
     int grp_leave(int gSock);
     int grp_send(int gSock,String msg,int len,int total);
-    int grp_recv(int gSock,int type,String msg,int len, int block);
+    int grp_recv(int gSock,Message receiveMsg, int block);
 
 }
