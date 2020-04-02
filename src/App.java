@@ -104,13 +104,24 @@ class Application extends Thread{
                     Group = in.next();
 
                     Message ms = new Message("",null,null);
-                    App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
+                    int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
 
+                    if(returnVal == 0){
+                        break;
+                    }
+                    int flag = 0;
                     while(!ms.getType().equals("")){
                         System.out.println("App received newView");
                         AllViews.put(ms.getView().getId(),ms.getView());
                         ms = new Message("",null,null);
-                        App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
+                        int re = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
+                        if(re == 0){
+                            flag =1;
+                            break;
+                        }
+                    }
+                    if(flag ==1 ){
+                        break;
                     }
 
                     System.out.println("TO APP ELABE"+ ms.getMessage().getMessage());

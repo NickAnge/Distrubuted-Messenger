@@ -146,14 +146,35 @@ class UdpMessage implements  Serializable{
     private int seqNo;
     private int senderPort;
     private int groupId;
+    private List<Integer> membersSend;
+    private  int startingSender;
 
-    public UdpMessage(String message, int seqno,int senderPort,int groupId) {
+    public int getStartingSender() {
+        return startingSender;
+    }
+
+    public void setStartingSender(int startingSender) {
+        this.startingSender = startingSender;
+    }
+
+    public UdpMessage(String message, int seqno, int senderPort, int groupId, int startingSender) {
         Message = message;
         seqNo = seqno;
         this.senderPort = senderPort;
         this.groupId = groupId;
-
+        this.membersSend = new ArrayList<>();
+        this.startingSender = startingSender;
     }
+
+    public List<Integer> getMembersSend() {
+        return membersSend;
+    }
+
+    public void setMembersSend(List<Integer> membersSend) {
+        this.membersSend = membersSend;
+    }
+
+
 
     public int getGroupId() {
         return groupId;
