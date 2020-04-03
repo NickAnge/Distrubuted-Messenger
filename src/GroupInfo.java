@@ -12,7 +12,11 @@ public class GroupInfo implements Serializable {
     private List<EachMemberInfo> Members;
     private int id;
 
-    public GroupInfo(String groupName,int newid) {
+    public GroupInfo() {
+        Members = new ArrayList<>();
+    }
+
+    public GroupInfo(String groupName, int newid) {
         this.groupName = groupName;
         Members = new ArrayList<EachMemberInfo>();
         id = newid;
@@ -97,9 +101,18 @@ class Message implements  Serializable {
     private String type; //Add, Leave, GroupView
     private GroupInfo View;
     private UdpMessage Message;
+    private String name;
 
     public UdpMessage getMessage() {
         return Message;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setMessage(UdpMessage message) {
@@ -148,6 +161,10 @@ class UdpMessage implements  Serializable{
     private int groupId;
     private List<Integer> membersSend;
     private  int startingSender;
+
+    public UdpMessage() {
+        this.membersSend = new ArrayList<>();
+    }
 
     public int getStartingSender() {
         return startingSender;
@@ -206,5 +223,31 @@ class UdpMessage implements  Serializable{
 
     public void setSeqNo(int seqNo) {
         this.seqNo = seqNo;
+    }
+}
+
+class GroupMessages implements  Serializable {
+    List<Message> msgs;
+    List<Message> viewsOfTheTeam;
+
+    public GroupMessages() {
+        this.msgs = new ArrayList<>();
+        this.viewsOfTheTeam = new ArrayList<>();
+    }
+
+    public List<Message> getMsgs() {
+        return msgs;
+    }
+
+    public void setMsgs(List<Message> msgs) {
+        this.msgs = msgs;
+    }
+
+    public List<Message> getViewsOfTheTeam() {
+        return viewsOfTheTeam;
+    }
+
+    public void setViewsOfTheTeam(List<Message> viewsOfTheTeam) {
+        this.viewsOfTheTeam = viewsOfTheTeam;
     }
 }

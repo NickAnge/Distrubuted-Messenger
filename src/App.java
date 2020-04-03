@@ -36,18 +36,23 @@ class Application extends Thread{
 
     @Override
     public void run() {
+        Scanner in = new Scanner(System.in);
 
         System.out.println(RED_BOLD + "Starting the App..");
-        System.out.println(RESET);
+        System.out.print(RED_BOLD + "Give Starting seq Number..");
 
-        App.appMiddleware = new Middleware();// Morfh epikinwnias tou application me to middleware
+//        System.out.println(RESET);
+        ;
+        int seq = in.nextInt();
+         System.out.println(RESET);
+
+        App.appMiddleware = new Middleware(seq);// Morfh epikinwnias tou application me to middleware
+        // System.out.println(RESET);
 
         if(App.appMiddleware.checkValue == 0){
             System.out.println(RED +"Wait time expired ...Couldn't Connect the App....Try again later");
             return;
         }
-        Scanner in = new Scanner(System.in);
-
         System.out.println(RED_BOLD + "NEW APP");
         System.out.print(CYAN_BOLD + "MY NAME: ");
         String name = in.next();
@@ -73,11 +78,11 @@ class Application extends Thread{
                     Sock = App.appMiddleware.grp_join(Group, name,newView);
                     teams.add(Sock);
                     AllViews.put(Sock,newView.getView());
-                    Set<Integer> keys = AllViews.keySet();
-                    for(Integer req: keys){
-                        System.out.println(App.appMiddleware.middlewareTeamsBuffer.get(req).getGroupName());
-                    }
-                    System.out.println(Sock);
+//                    Set<Integer> keys = AllViews.keySet();
+//                    for(Integer req: keys){
+//                        System.out.println(App.appMiddleware.middlewareTeamsBuffer.get(req).getGroupName());
+//                    }
+//                    System.out.println(Sock);
 
                     break;
                 case 2:
@@ -95,15 +100,18 @@ class Application extends Thread{
                     String msg= "";
                     while(!msg.equals("Bye")){
                         msg = in.nextLine();
-                        System.err.println("TO MHNYMA EINAI:" +msg);
+//                        System.err.println("TO MHNYMA EINAI:" +msg);
                         App.appMiddleware.grp_send(Integer.parseInt(Group),msg,0,0);
                     }
                     break;
                 case 3:
                     System.out.println(CYAN_BOLD + "GROUP: ");
                     Group = in.next();
-
-                    Message ms = new Message("",null,null);
+                    UdpMessage udp = new UdpMessage();
+//                        GroupInfo gr = new GroupInfo();
+                    System.out.println("App received msg");
+                    GroupInfo gp = new GroupInfo();
+                    Message ms = new Message("",gp,udp);
                     int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
 
                     if(returnVal == 0){
@@ -113,7 +121,9 @@ class Application extends Thread{
                     while(!ms.getType().equals("")){
                         System.out.println("App received newView");
                         AllViews.put(ms.getView().getId(),ms.getView());
-                        ms = new Message("",null,null);
+                        UdpMessage udp1 = new UdpMessage();
+                        GroupInfo gr = new GroupInfo();
+                        ms = new Message("",gr,udp1);
                         int re = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
                         if(re == 0){
                             flag =1;
@@ -123,8 +133,9 @@ class Application extends Thread{
                     if(flag ==1 ){
                         break;
                     }
+//                    System.out.println(""+ms.getMessage());
 
-                    System.out.println("TO APP ELABE"+ ms.getMessage().getMessage());
+                    System.out.println(""+ms.getName() +": "+ ms.getMessage().getMessage());
                     break;
                 case 4:
                     if(teams.size() == 0){
@@ -138,8 +149,9 @@ class Application extends Thread{
                     int group = in.nextInt();
                     AllViews.remove(group);
                     App.appMiddleware.grp_leave(group);
-                    return;
-//                    break;
+//                    return;
+//                    System.out.println("Perasa apo to leave");
+                    break;
             }
 //            break;
         }
