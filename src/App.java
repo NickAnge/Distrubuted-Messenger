@@ -40,9 +40,6 @@ class Application extends Thread{
 
         System.out.println(RED_BOLD + "Starting the App..");
         System.out.print(RED_BOLD + "Give Starting seq Number..");
-
-//        System.out.println(RESET);
-        ;
         int seq = in.nextInt();
          System.out.println(RESET);
 
@@ -74,9 +71,10 @@ class Application extends Thread{
                     System.err.print(CYAN_BOLD + "GROUP: ");
                     Group = in.next();
                     System.err.println(RESET);
-                    Message newView = new Message("",null,null);
+                    Message newView = new Message("",null,(UdpMessage)null);
                     Sock = App.appMiddleware.grp_join(Group, name,newView);
                     teams.add(Sock);
+
                     AllViews.put(Sock,newView.getView());
 //                    Set<Integer> keys = AllViews.keySet();
 //                    for(Integer req: keys){
@@ -86,13 +84,14 @@ class Application extends Thread{
 
                     break;
                 case 2:
-
-                    System.out.print(CYAN_BOLD + "GROUP: ");
-                    System.out.println(RED_BOLD + "WHICH ONE");
+                    System.out.println(RED_BOLD + "GROUPS ");
+////                    System.out.println(RED_BOLD + "WHICH ONE");
+//                    in.nextLine();
                     for(int i= 0 ; i <teams.size(); i++){
-                        System.out.println(teams.get(i)+ " ");
+                        System.out.println(CYAN_BOLD + "Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
                     }
 
+                    System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
                     System.out.println("START CONVERSATION");
                     in.nextLine();
@@ -100,16 +99,23 @@ class Application extends Thread{
                     String msg= "";
                     while(!msg.equals("Bye")){
                         msg = in.nextLine();
-//                        System.err.println("TO MHNYMA EINAI:" +msg);
+                        System.err.println("My msg :" +msg);
                         App.appMiddleware.grp_send(Integer.parseInt(Group),msg,0,0);
                     }
                     break;
                 case 3:
-                    System.out.println(CYAN_BOLD + "GROUP: ");
+                    System.out.println(RED_BOLD + "GROUPS ");
+////                    System.out.println(RED_BOLD + "WHICH ONE");
+//                    in.nextLine();
+                    for(int i= 0 ; i <teams.size(); i++){
+                        System.out.println(CYAN_BOLD + "Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
+                    }
+
+                    System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
                     UdpMessage udp = new UdpMessage();
-//                        GroupInfo gr = new GroupInfo();
-                    System.out.println("App received msg");
+
+                    System.out.println(GREEN +"App received msg");
                     GroupInfo gp = new GroupInfo();
                     Message ms = new Message("",gp,udp);
                     int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
@@ -119,7 +125,7 @@ class Application extends Thread{
                     }
                     int flag = 0;
                     while(!ms.getType().equals("")){
-                        System.out.println("App received newView");
+                        System.out.println(ms.getChangeViewMessage());
                         AllViews.put(ms.getView().getId(),ms.getView());
                         UdpMessage udp1 = new UdpMessage();
                         GroupInfo gr = new GroupInfo();
@@ -133,8 +139,6 @@ class Application extends Thread{
                     if(flag ==1 ){
                         break;
                     }
-//                    System.out.println(""+ms.getMessage());
-
                     System.out.println(""+ms.getName() +": "+ ms.getMessage().getMessage());
                     break;
                 case 4:
@@ -143,14 +147,25 @@ class Application extends Thread{
                         break;
                     }
                     System.out.println(RED_BOLD + "WHICH ONE");
+
+                    Group = in.next();
+                    System.out.println(RED_BOLD + "WHICH ONE");
+
                     for(int i= 0 ; i <teams.size(); i++){
-                        System.out.print(teams.get(i)+ " ");
+                        System.out.println("Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
                     }
                     int group = in.nextInt();
+                    int k = -1;
+                    for(int i = 0; i <teams.size(); i++){
+                        if(group == teams.get(i)){
+                            k = i;
+                        }
+                    }
+                    if(k >=0){
+                        teams.remove(k);
+                    }
                     AllViews.remove(group);
                     App.appMiddleware.grp_leave(group);
-//                    return;
-//                    System.out.println("Perasa apo to leave");
                     break;
             }
 //            break;

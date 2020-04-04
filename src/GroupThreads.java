@@ -56,6 +56,7 @@ public class GroupThreads {
                         if (member == null) {
                             continue;
                         }
+                        String leaveMsg = new String("This member left the Group: "+member.getName());
                         group.getMembers().remove(member);
                         String msg = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
                         if(msg == null){
@@ -67,7 +68,7 @@ public class GroupThreads {
                             groupManager.getListOfGroupsIntoManager().remove(group);
                             break;
                         } else {
-                            Message newView = new Message("Leave", group);
+                            Message newView = new Message("Leave",group,leaveMsg);
                             groupManager.informTheGroup(group, newView, member.getName());
                         }
                     } else {

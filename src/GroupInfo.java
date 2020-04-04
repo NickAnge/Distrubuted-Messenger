@@ -102,6 +102,15 @@ class Message implements  Serializable {
     private GroupInfo View;
     private UdpMessage Message;
     private String name;
+    private String changeViewMessage;
+
+    public String getChangeViewMessage() {
+        return changeViewMessage;
+    }
+
+    public void setChangeViewMessage(String changeViewMessage) {
+        this.changeViewMessage = changeViewMessage;
+    }
 
     public UdpMessage getMessage() {
         return Message;
@@ -143,9 +152,14 @@ class Message implements  Serializable {
         Message = message;
     }
 
-    public Message(String type, GroupInfo view) {
+    public  Message(String type, GroupInfo view){
         this.type = type;
         View = view;
+    }
+    public Message(String type, GroupInfo view, String msg) {
+        this.type = type;
+        View = view;
+        this.changeViewMessage = msg;
     }
 
     public Message(String type, UdpMessage message) {
@@ -161,6 +175,15 @@ class UdpMessage implements  Serializable{
     private int groupId;
     private List<Integer> membersSend;
     private  int startingSender;
+    private  int selfDelivered;
+
+    public int getSelfDelivered() {
+        return selfDelivered;
+    }
+
+    public void setSelfDelivered(int selfDelivered) {
+        this.selfDelivered = selfDelivered;
+    }
 
     public UdpMessage() {
         this.membersSend = new ArrayList<>();
@@ -181,6 +204,7 @@ class UdpMessage implements  Serializable{
         this.groupId = groupId;
         this.membersSend = new ArrayList<>();
         this.startingSender = startingSender;
+        this.selfDelivered =0;
     }
 
     public List<Integer> getMembersSend() {
@@ -229,10 +253,20 @@ class UdpMessage implements  Serializable{
 class GroupMessages implements  Serializable {
     List<Message> msgs;
     List<Message> viewsOfTheTeam;
+    int delivered;
+
+    public int getDelivered() {
+        return delivered;
+    }
+
+    public void setDelivered(int delivered) {
+        this.delivered = delivered;
+    }
 
     public GroupMessages() {
         this.msgs = new ArrayList<>();
         this.viewsOfTheTeam = new ArrayList<>();
+        delivered = 0;
     }
 
     public List<Message> getMsgs() {

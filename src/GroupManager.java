@@ -222,7 +222,8 @@ public class GroupManager {
                 temp.getMembers().add(NewMember);
                 flag = 0;
                 System.out.println("send GroupView");
-                Message newView = new Message("Add",temp);
+                String addMsg = new String("New Member added to the Group:" + NewMember.getName());
+                Message newView = new Message("Add",temp,addMsg);
                 this.informTheGroup(temp,newView,NewMember.getName());
 //                Message mesg = new Message("Add",temp);
                 sendNewMessageToSocket(NewMember.getAppSocket(),newView);
@@ -243,7 +244,9 @@ public class GroupManager {
             NewGroup.getMembers().add(NewMember);
 
             ListOfGroupsIntoManager.add(NewGroup);
-            Message mesg = new Message("Add",NewGroup);
+            String addMsg = new String("New Member added to the Group:" + NewMember.getName());
+
+            Message mesg = new Message("Add",NewGroup,addMsg);
 
 //            this.ListOfGroupsIntoManager.put(temp,NewGroup);//Prosthikh kainourgias omadas sthn apothikh
             sendNewMessageToSocket(socket,mesg);//apostolh new View
@@ -303,6 +306,7 @@ public class GroupManager {
             for(int i =0;i<tim;i++){
                 EachMemberInfo member = temp.getMembers().get(i);
                 if(member.getAppSocket().equals(specificSocket)){
+                    String errorMsg = new String("This member got an error and left the Group: "+ member.getName());
                     temp.getMembers().remove(member);
                     System.out.println("MPHKA mesa sto remove all");
 
@@ -310,7 +314,7 @@ public class GroupManager {
                         ListOfGroupsIntoManager.remove(temp);
                         break;
                     }
-                    Message view = new Message("Error",temp);
+                    Message view = new Message("Error",temp,errorMsg);
                     informTheGroup(temp,view,member.getName());
                     break;
                 }
