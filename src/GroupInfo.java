@@ -12,14 +12,25 @@ public class GroupInfo implements Serializable {
     private List<EachMemberInfo> Members;
     private int id;
 
+    public CoorditatorInfo getCoInfo() {
+        return coInfo;
+    }
+
+    public void setCoInfo(CoorditatorInfo coInfo) {
+        this.coInfo = coInfo;
+    }
+
+    private CoorditatorInfo coInfo;
+
     public GroupInfo() {
         Members = new ArrayList<>();
     }
 
-    public GroupInfo(String groupName, int newid) {
+    public GroupInfo(String groupName, int newid, CoorditatorInfo Coinfo) {
         this.groupName = groupName;
         Members = new ArrayList<EachMemberInfo>();
         id = newid;
+        this.coInfo = Coinfo;
     }
 
     public int getId() {
@@ -104,6 +115,7 @@ class Message implements  Serializable {
     private String name;
     private String changeViewMessage;
 
+
     public String getChangeViewMessage() {
         return changeViewMessage;
     }
@@ -176,6 +188,8 @@ class UdpMessage implements  Serializable{
     private List<Integer> membersSend;
     private  int startingSender;
     private  int selfDelivered;
+    private int totaldelivered;
+    private  int total;
 
     public int getSelfDelivered() {
         return selfDelivered;
@@ -197,14 +211,32 @@ class UdpMessage implements  Serializable{
         this.startingSender = startingSender;
     }
 
-    public UdpMessage(String message, int seqno, int senderPort, int groupId, int startingSender) {
+    public UdpMessage(String message, int seqno, int senderPort, int groupId, int startingSender,int total,int sended,int totaldelivered) {
         Message = message;
         seqNo = seqno;
         this.senderPort = senderPort;
         this.groupId = groupId;
         this.membersSend = new ArrayList<>();
         this.startingSender = startingSender;
-        this.selfDelivered =0;
+        this.selfDelivered =sended;
+        this.totaldelivered = totaldelivered;
+        this.total = total;
+    }
+
+    public int getTotaldelivered() {
+        return totaldelivered;
+    }
+
+    public void setTotaldelivered(int totaldelivered) {
+        this.totaldelivered = totaldelivered;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
     }
 
     public List<Integer> getMembersSend() {
@@ -283,5 +315,31 @@ class GroupMessages implements  Serializable {
 
     public void setViewsOfTheTeam(List<Message> viewsOfTheTeam) {
         this.viewsOfTheTeam = viewsOfTheTeam;
+    }
+}
+
+class CoorditatorInfo implements  Serializable {
+    private int deliverno;
+    private  EachMemberInfo coMember;
+
+    public CoorditatorInfo(int deliverno, EachMemberInfo coMember) {
+        this.deliverno = deliverno;
+        this.coMember = coMember;
+    }
+
+    public int getDeliverno() {
+        return deliverno;
+    }
+
+    public void setDeliverno(int deliverno) {
+        this.deliverno = deliverno;
+    }
+
+    public EachMemberInfo getCoMember() {
+        return coMember;
+    }
+
+    public void setCoMember(EachMemberInfo coMember) {
+        this.coMember = coMember;
     }
 }

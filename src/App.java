@@ -90,9 +90,10 @@ class Application extends Thread{
                     for(int i= 0 ; i <teams.size(); i++){
                         System.out.println(CYAN_BOLD + "Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
                     }
-
                     System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
+                    System.out.print(RED_BOLD + "CHOOSE FIFO(0) or TOTAL (1): ");
+                    int total = in.nextInt();
                     System.out.println("START CONVERSATION");
                     in.nextLine();
 
@@ -100,7 +101,7 @@ class Application extends Thread{
                     while(!msg.equals("Bye")){
                         msg = in.nextLine();
                         System.err.println("My msg :" +msg);
-                        App.appMiddleware.grp_send(Integer.parseInt(Group),msg,0,0);
+                        App.appMiddleware.grp_send(Integer.parseInt(Group),msg,0,total);
                     }
                     break;
                 case 3:
@@ -148,9 +149,6 @@ class Application extends Thread{
                     }
                     System.out.println(RED_BOLD + "WHICH ONE");
 
-                    Group = in.next();
-                    System.out.println(RED_BOLD + "WHICH ONE");
-
                     for(int i= 0 ; i <teams.size(); i++){
                         System.out.println("Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
                     }
@@ -166,6 +164,9 @@ class Application extends Thread{
                     }
                     AllViews.remove(group);
                     App.appMiddleware.grp_leave(group);
+                    break;
+                default:
+                    System.out.println(RED + "WRONG CHOICE>>>TRY AGAIN");
                     break;
             }
 //            break;

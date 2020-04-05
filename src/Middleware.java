@@ -18,7 +18,8 @@ public class Middleware implements IApi{
 //    List<UdpMessage> receiveBuffer;
     List<Message> receiveMiddle;
     List<UdpMessage> sendsBuffer;
-    List<UdpMessage> resendBuffer;
+    List<UdpMessage> resend; //for RM messages from coordinator;
+
     List<UdpMessage> whatIsend;
     Thread middlewareThread;
     HashMap<Integer,Message> sendtoAPP;
@@ -26,27 +27,39 @@ public class Middleware implements IApi{
     public  final Object lock;
     int seqNumber;
     List<Integer> mids;//exoun paradwthei sto middleware sigoura;
+    List<Integer> rids;//exoun paradwthei sto middleware apo ton coordinator;
     List<Integer> appids;
     HashMap<Integer,GroupInfo> Groups;
     int receiveMessages;
     int delivered;
     int sended;
+    int totaldelivered; //gia to TOTAL;
+    int amICoordinator;
     List<Message> mbuf; //FOR FIFO
-    List<Integer>mbufids;
+    List<Message> totalbuf;//FOR TOTAL
+    List<Integer> mbufids;
+    List<Integer> totalbufids;//FOr total
 
+    List<Integer> idsCoord;
     int gSock;
     public Middleware(int seqNumber) {
         Groups = new HashMap<Integer,GroupInfo>();
         InfoManager = new GroupManagerInfo(null);
 //        receiveBuffer = new ArrayList<UdpMessage>();
         discoverGroupManager();
+        totalbuf=new ArrayList<>();
+        totalbufids = new ArrayList<>();
         receiveMessages = 0;
         groupMessages = new HashMap<>();
+        rids = new ArrayList<>();
+        idsCoord = new ArrayList<>();
         gSock =0;
         teams = 0;
         delivered =0;
         sended = -1;
+        amICoordinator = 0;
         this.seqNumber = seqNumber;
+        resend = new ArrayList<>();
         mbufids = new ArrayList<>();
         sendtoAPP = new HashMap<>();
         mbuf = new ArrayList<>();
@@ -56,7 +69,6 @@ public class Middleware implements IApi{
         whatIsend = new ArrayList<>();
         receiveMiddle = new ArrayList<>();
         sendsBuffer = new ArrayList<>();
-        resendBuffer = new ArrayList<>();
         middlewareTeamsBuffer = new HashMap<Integer, GroupInfo>();
         middlewareThread = new Thread(new MiddlewareJob());
         middlewareThread.start();
@@ -116,12 +128,12 @@ public class Middleware implements IApi{
 
         seqNumber++;
         sended++;
-//        System.out.println(msg);
-        UdpMessage newMessage = new UdpMessage(msg,seqNumber,OurPort,gSock,OurPort);
-        UdpMessage newMessage2= new UdpMessage(msg,seqNumber,OurPort,gSock,OurPort);
+        System.out.println("SEIRA APOSTOLHS" + sended);
+        UdpMessage newMessage = new UdpMessage(msg,seqNumber,OurPort,gSock,OurPort,total,sended,-1);
+//        UdpMessage newMessage2= new UdpMessage(msg,seqNumber,OurPort,gSock,OurPort);
 
-        newMessage.setSelfDelivered(sended);
-        newMessage2.setSelfDelivered(sended);
+//        newMessage.setSelfDelivered(sended);
+//        newMessage2.setSelfDelivered(sended);
 
         Iterator<EachMemberInfo> it = middlewareTeamsBuffer.get(gSock).getMembers().iterator();
 
@@ -145,7 +157,7 @@ public class Middleware implements IApi{
                 Message nextMsg = groupMessages.get(gSock).getMsgs().get(0);
                 groupMessages.get(gSock).getMsgs().remove(0);
 
-                System.out.println("mPHKA EDW" + receiveMsg.getMessage());
+                System.out.println("mPHKA EDW" + receiveMsg.getMessage() + "seira mhnumatos" + nextMsg.getMessage().getSelfDelivered());
 
                 if(nextMsg.getMessage() != null){
                     receiveMsg.getMessage().setSenderPort(nextMsg.getMessage().getSenderPort());
@@ -272,34 +284,45 @@ public class Middleware implements IApi{
         return ;
     }
 
-    class MiddlewareJob extends Thread {
 
+    public void coordinatorSends(UdpMessage msg,int groupId){
+        idsCoord.add(msg.getSeqNo());
+        BM_send(msg,groupId);
+    }
+    class MiddlewareJob extends Thread {
         @Override
         public void run() {
             while(true){
                     Message newGroup2 = (Message) getViewFromSocket(InfoManager.getCommunicationSock());
-//                    System.out.println(newGroup2);
                     if(!newGroup2.getType().equals("noMessage")){
-//                        System.out.println("mesa ");
                         teams = newGroup2.getView().getId();
                         if(!middlewareTeamsBuffer.containsKey(teams)){
                             gSock = teams;
                             GroupMessages group = new GroupMessages();
+//                            group.getViewsOfTheTeam().add()
                             groupMessages.put(gSock,group);
                             System.out.println(groupMessages.get(teams) + " to dhmiourghsa");
+                            if(newGroup2.getView().getCoInfo().getCoMember().getMemberPort() == OurPort){
+                                System.out.println("EIMAI O COORDINATOR");
+                                amICoordinator = 1;
+                            }
                         }
                         else{
                             GroupMessages gro = groupMessages.get(teams);
-//                            int size = gro.getViewsOfTheTeam().size();
                             gro.getViewsOfTheTeam().add(0,newGroup2);
                             gro.getMsgs().add(newGroup2);
-//                            System.out.println("Mphka sta epomena view");
-//                            seqNumber++;
-//                            sendtoAPP.put(seqNumber,newGroup2);
-//                            receiveMiddle.add(newGroup2);
+                            if(amICoordinator != 1){
+                                if(newGroup2.getView().getCoInfo().getCoMember().getMemberPort() == OurPort){
+                                    System.out.println("EIMAI O COORDINATOR");
+                                    amICoordinator = 1;
+                                }
+                            }
+                            if(newGroup2.getView().getCoInfo().getCoMember().getMemberPort() == OurPort){
+                                System.out.println("EIMAI O COORDINATOR");
+                                amICoordinator = 1;
+                            }
                         }
                         middlewareTeamsBuffer.put(teams,newGroup2.getView());
-
 
 //                        System.out.println("NEW VIEW STO MIDDLEWARE BUFFER");
 //                    teams = middlewareTeamsBuffer.size();
@@ -337,7 +360,25 @@ public class Middleware implements IApi{
 
                             System.out.println("Middleware received message" + receiveMessage.getMessage());
 
-                            BM_deliver(receiveMessage);
+                            if(receiveMessage.getTotal() == 1){
+                                BM_deliverTotal1(receiveMessage);
+                            }
+                            else  if(receiveMessage.getTotal() == 0){
+                                BM_deliver(receiveMessage);
+                            }
+
+                            if(receiveMessage.getTotal() == 1){
+                                if(!idsCoord.contains(receiveMessage.getSeqNo())){
+                                    if(middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().getCoMember().getMemberPort() == OurPort){
+                                        int deliver = middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().getDeliverno();
+                                        deliver++;
+                                        middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().setDeliverno(deliver);
+                                        receiveMessage.setTotaldelivered(deliver);
+                                        coordinatorSends(receiveMessage,receiveMessage.getGroupId());
+                                    }
+                                }
+                            }
+
 
                             System.out.println("MIDDLEWARE " +receiveMiddle.size());
                             for(int i =0;i < receiveMiddle.size();i++){
@@ -394,28 +435,19 @@ public class Middleware implements IApi{
                                 }
                             }
 
-//                            continue;
-
-//                            e.printStackTrace();
                         } catch (IOException | ClassNotFoundException e) {
 //                            e.printStackTrace();
                         }
                     }
             }
-
         }
     }
-
     public void BM_send(UdpMessage msg,int groupId){
         Iterator<EachMemberInfo> it = middlewareTeamsBuffer.get(groupId).getMembers().iterator();
         DatagramSocket UdpSocket = null;
 
-//        while(it.hasNext()){
-//            EachMemberInfo temp = it.next();
-////            System.out.println("PORT"+ temp.getMemberPort());
-//            msg.getMembersSend().add(temp.getMemberPort());
-//        }
-//        sendsBuffer.add(msg);
+
+
         Iterator<EachMemberInfo> it2 = middlewareTeamsBuffer.get(groupId).getMembers().iterator();
         while(it2.hasNext()){
             EachMemberInfo temp = it2.next();
@@ -438,6 +470,232 @@ public class Middleware implements IApi{
             }
         }
     }
+
+    public void BM_deliverTotal1(UdpMessage receiveMessage){
+        int hold =0;
+        int delete = 0;
+        System.out.println("TO MHNYMA EINAI TOTAL");
+        if(receiveMessage.getTotaldelivered() < 0 ){
+            if(!mids.contains(receiveMessage.getSeqNo())) {
+                int i = 0;
+                if (sendsBuffer.size() > 0) {
+                    for (; i < sendsBuffer.size(); i++) {
+                        if (sendsBuffer.get(i).getSeqNo() == receiveMessage.getSeqNo()) {
+//
+                            int l = -1;
+                            for (int j = 0; j < sendsBuffer.get(i).getMembersSend().size(); j++) {
+//                                System.out.println(sendsBuffer.get(i).getMembersSend().get(j));
+                                if (sendsBuffer.get(i).getMembersSend().get(j).equals(receiveMessage.getSenderPort())) {
+                                    l = j;
+                                    System.out.println("to ebgala");
+                                    break;
+                                }
+                            }
+                            if (l >=0) {
+                                sendsBuffer.get(i).getMembersSend().remove(l);
+                            }
+                            if (receiveMessage.getSenderPort() != OurPort) {
+                                receiveMessage.setSenderPort(OurPort);
+                                BM_send(receiveMessage, receiveMessage.getGroupId());
+                            }
+                            hold = 1;
+                            if (sendsBuffer.get(i).getMembersSend().size() == 0) {
+//                                hold = i;
+                                Message rec = new Message("", receiveMessage);
+                                receiveMiddle.add(rec);
+                                delete = 1;
+                                mids.add(receiveMessage.getSeqNo());
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (hold == 0) {
+                    System.out.println("PRWTH FORA");
+                    UdpMessage sendAddition = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender(),receiveMessage.getTotal(),receiveMessage.getSelfDelivered(),-1);
+//
+                    for (int counter = 0; counter < receiveMessage.getMembersSend().size(); counter++) {
+                        sendAddition.getMembersSend().add(receiveMessage.getMembersSend().get(counter));
+                    }
+                    for(int counter = 0;counter < sendAddition.getMembersSend().size();counter++){
+                        System.out.println("Sends "+ sendAddition.getMembersSend().get(counter));
+                    }
+                    sendsBuffer.add(sendAddition);
+
+                    int size = sendsBuffer.size();
+                    int p = -1;
+                    for (int counter = 0; counter < sendsBuffer.get(size - 1).getMembersSend().size(); counter++) {
+                        if (sendsBuffer.get(size - 1).getMembersSend().get(counter) == receiveMessage.getSenderPort()) {
+                            System.out.println("PAW NA TO BGALW");
+                            p = counter;
+                        }
+                    }
+
+                    if (p >= 0) {
+                        sendsBuffer.get(size - 1).getMembersSend().remove(p);
+                    }
+                    if (receiveMessage.getSenderPort() != OurPort) {
+                        receiveMessage.setSenderPort(OurPort);
+                        BM_send(receiveMessage, receiveMessage.getGroupId());
+                    }
+                    System.out.println(+size+ ""+ sendsBuffer.get(size - 1).getMembersSend().size());
+                    if (sendsBuffer.get(size - 1).getMembersSend().size() == 0) {
+                        System.out.println("Eotimos na to balw middleware");
+                        Message rec = new Message("", receiveMessage);
+                        receiveMiddle.add(rec);
+                        mids.add(receiveMessage.getSeqNo());
+                        delete = 1;
+
+                    }
+                }
+                if(delete == 1){
+                    sendsBuffer.remove(i);
+                    int p = -1;
+                    for(int j = 0;j <whatIsend.size();j++){
+                        System.out.println(whatIsend.get(j).getMessage());
+                        if(whatIsend.get(j).getSeqNo() == receiveMessage.getSeqNo()){
+                            p = j;
+                        }
+                    }
+                    if(p >= 0){
+                        System.out.println("P" + p);
+                        whatIsend.remove(p);
+                    }
+                }
+            }
+        }
+        else {
+            if(!rids.contains(receiveMessage.getSeqNo())){
+                int i=0;
+                for(; i < resend.size();i++){
+                    if(resend.get(i).getSeqNo() == receiveMessage.getSeqNo()){
+                        int l = -1;
+                        for (int j = 0; j < resend.get(i).getMembersSend().size(); j++) {
+                            if (resend.get(i).getMembersSend().get(j).equals(receiveMessage.getSenderPort())) {
+                                l = j;
+                                System.out.println("to ebgala");
+                                break;
+                            }
+                        }
+                        if (l >=0) {
+                            resend.get(i).getMembersSend().remove(l);
+                        }
+                        if (receiveMessage.getSenderPort() != OurPort) {
+                            receiveMessage.setSenderPort(OurPort);
+                            BM_send(receiveMessage, receiveMessage.getGroupId());
+                        }
+                        hold = 1;
+                        if (resend.get(i).getMembersSend().size() == 0) {
+//                                hold = i;
+                            Message rec = new Message("", receiveMessage);
+                            receiveMiddle.add(rec);
+                            delete = 1;
+                            rids.add(receiveMessage.getSeqNo());
+                            break;
+                        }
+                    }
+                }
+                if(hold == 1){
+                    System.out.println("PRWTH FORA");
+                    UdpMessage sendAddition = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender(),receiveMessage.getTotal(),receiveMessage.getSelfDelivered(),-1);
+//
+                    for (int counter = 0; counter < receiveMessage.getMembersSend().size(); counter++) {
+                        sendAddition.getMembersSend().add(receiveMessage.getMembersSend().get(counter));
+                    }
+                    for(int counter = 0;counter < sendAddition.getMembersSend().size();counter++){
+                        System.out.println("Sends "+ sendAddition.getMembersSend().get(counter));
+                    }
+                    resend.add(sendAddition);
+
+                    int size = resend.size();
+                    int p = -1;
+                    for (int counter = 0; counter < resend.get(size - 1).getMembersSend().size(); counter++) {
+                        if (resend.get(size - 1).getMembersSend().get(counter) == receiveMessage.getSenderPort()) {
+                            System.out.println("PAW NA TO BGALW");
+                            p = counter;
+                        }
+                    }
+
+                    if (p >= 0) {
+                        resend.get(size - 1).getMembersSend().remove(p);
+                    }
+                    if (receiveMessage.getSenderPort() != OurPort) {
+                        receiveMessage.setSenderPort(OurPort);
+                        BM_send(receiveMessage, receiveMessage.getGroupId());
+                    }
+                    System.out.println(+size+ ""+ sendsBuffer.get(size - 1).getMembersSend().size());
+                    if (resend.get(size - 1).getMembersSend().size() == 0) {
+                        System.out.println("Eotimos na to balw middleware");
+                        Message rec = new Message("", receiveMessage);
+                        receiveMiddle.add(rec);
+                        rids.add(receiveMessage.getSeqNo());
+                        delete = 1;
+                    }
+                }
+                if(delete == 1){
+                    resend.remove(i);
+                    int p = -1;
+                    for(int j = 0;j <whatIsend.size();j++){
+//                        System.out.println(whatIsend.get(j).getMessage());
+                        if(whatIsend.get(j).getSeqNo() == receiveMessage.getSeqNo()){
+                            p = j;
+                        }
+                    }
+                    if(p >= 0){
+                        whatIsend.remove(p);
+                    }
+                }
+            }
+        }
+        if(!totalbufids.contains(receiveMessage.getSeqNo())){
+            totalbufids.add(receiveMessage.getSeqNo());
+            Message rec = new Message("", receiveMessage);
+            totalbuf.add(rec);
+            for(int j = 0;j < middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().size();j++){
+                if(receiveMessage.getStartingSender() == middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().get(j).getMemberPort()){
+                    rec.setName(middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().get(j).getName());
+                }
+            }
+        }
+        else {
+            if(receiveMessage.getTotaldelivered() > 0) {
+                for(int counter = 0;counter < totalbuf.size();counter++){
+                    if(receiveMessage.getSeqNo() == totalbuf.get(counter).getMessage().getSeqNo()){
+                        totalbuf.get(counter).getMessage().setTotaldelivered(receiveMessage.getTotaldelivered());
+                    }
+                }
+            }
+        }
+        checkTotalBuffer();
+    }
+
+
+    public void checkTotalBuffer(){
+        while(true){
+            int j = -1;
+            for(int i = 0;i<totalbuf.size();i++){
+//                System.out.println("MHNTMATA ME THN SEIRA PARADOSHS: " + mbuf.get(i).getMessage().getSelfDelivered());
+//                if(delivered == 0 ){
+//                    System.out.println("TO PROSPERASA");
+//                    delivered = delivered + 1;
+//                    break;
+//                }
+                if(totalbuf.get(i).getMessage().getTotaldelivered() == totaldelivered){
+                    System.out.println(delivered + "SEIRA PARADWSHS");
+                    appids.add(totalbuf.get(i).getMessage().getSeqNo());
+                    groupMessages.get(totalbuf.get(i).getMessage().getGroupId()).getMsgs().add(totalbuf.get(i));
+                    totaldelivered++;
+                    j = i;
+                }
+            }
+            if(j >= 0){
+                totalbuf.remove(j);
+            }
+            if(j < 0){
+                break;
+            }
+        }
+    }
     public void  BM_deliver(UdpMessage receiveMessage){
         int delete = 0;
         int hold = 0;
@@ -453,12 +711,13 @@ public class Middleware implements IApi{
                         for (int j = 0; j < sendsBuffer.get(i).getMembersSend().size(); j++) {
 //                                System.out.println(sendsBuffer.get(i).getMembersSend().get(j));
                             if (sendsBuffer.get(i).getMembersSend().get(j).equals(receiveMessage.getSenderPort())) {
-                                l = i;
+                                l = j;
                                 System.out.println("to ebgala");
                                 break;
                             }
                         }
                         if (l >=0) {
+
                             sendsBuffer.get(i).getMembersSend().remove(l);
                         }
                         if (receiveMessage.getSenderPort() != OurPort) {
@@ -479,7 +738,7 @@ public class Middleware implements IApi{
             }
             if (hold == 0) {
                 System.out.println("PRWTH FORA");
-                UdpMessage sendAddition = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender());
+                UdpMessage sendAddition = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender(),receiveMessage.getTotal(),receiveMessage.getSelfDelivered(),-1);
 //
                 for (int counter = 0; counter < receiveMessage.getMembersSend().size(); counter++) {
                     sendAddition.getMembersSend().add(receiveMessage.getMembersSend().get(counter));
@@ -499,7 +758,6 @@ public class Middleware implements IApi{
                 }
 
                 if (p >= 0) {
-
                     sendsBuffer.get(size - 1).getMembersSend().remove(p);
                 }
                 if (receiveMessage.getSenderPort() != OurPort) {
@@ -580,8 +838,14 @@ public class Middleware implements IApi{
         while(true){
             int j = -1;
             for(int i = 0;i<mbuf.size();i++){
+//                System.out.println("MHNTMATA ME THN SEIRA PARADOSHS: " + mbuf.get(i).getMessage().getSelfDelivered());
+//                if(delivered == 0 ){
+//                    System.out.println("TO PROSPERASA");
+//                    delivered = delivered + 1;
+//                    break;
+//                }
                 if(mbuf.get(i).getMessage().getSelfDelivered() == delivered){
-
+                    System.out.println(delivered + "SEIRA PARADWSHS");
                     appids.add(mbuf.get(i).getMessage().getSeqNo());
                     groupMessages.get(mbuf.get(i).getMessage().getGroupId()).getMsgs().add(mbuf.get(i));
                     delivered++;

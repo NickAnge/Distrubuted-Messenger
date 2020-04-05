@@ -23,14 +23,15 @@ public class GroupThreads {
                 int tim = groupManager.getActiveMembers().size();
                 for (int counter = 0; counter < tim; counter++) {
 //                    Message MsgRequest = (Message) groupManager.getNewMessageFromSocket(groupManager.getNoTeamYet().get(counter));
-
                     String MsgRequest = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
+
                     if (MsgRequest == null) {
                         System.out.println("This App disconnected so we close it");
                         groupManager.removeFromAllGroups(groupManager.getActiveMembers().get(counter));
                         System.out.println("Perasa");
                         groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
                         groupManager.printList(groupManager.getListOfGroupsIntoManager());
+
                         if(groupManager.getActiveMembers().size()!= tim){
                             break;
                         }
@@ -45,7 +46,9 @@ public class GroupThreads {
                         System.out.println("MESA STHN LEAVE"+MsgRequest);
                         int idGroup = Integer.parseInt(MsgSplit[1]);
 
+
                         GroupInfo group = groupManager.findMembersGroup(idGroup);
+
 
                         EachMemberInfo member = null;
                         for (int i = 0; i < group.getMembers().size(); i++) {
@@ -57,17 +60,30 @@ public class GroupThreads {
                             continue;
                         }
                         String leaveMsg = new String("This member left the Group: "+member.getName());
-                        group.getMembers().remove(member);
+                        //TSEKARW AN EINAI COORDINATOR AUTOS POU FEugei GIA NA TO ALAKSW
+                        if(group.getCoInfo().getCoMember().getMemberPort() == member.getMemberPort()){
+                            //change coordinator
+                            System.out.println("Allazw ton coordinator");
+                            group.getMembers().remove(member);
+                            group = groupManager.changeCoordinator(group);
+                            System.out.println("Meta ton coordinator"+ group);
+                        }
+                        else{
+                            group.getMembers().remove(member);
+
+                        }
                         String msg = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
                         if(msg == null){
                             //diwksto apo oles tis omades
 //                            groupManager.getActiveMembers()
                             groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
                         }
+                        System.out.println("paw na svhsw" +group);
                         if (group.getMembers().size() == 0) {
                             groupManager.getListOfGroupsIntoManager().remove(group);
                             break;
-                        } else {
+                        }
+                        else {
                             Message newView = new Message("Leave",group,leaveMsg);
                             groupManager.informTheGroup(group, newView, member.getName());
                         }
@@ -89,51 +105,6 @@ public class GroupThreads {
                 }
             }
         }
-//            else{
-//                    groupManager.addMemberToGroups(groupManager.getNoTeamYet().get(counter), MsgRequest);
-//                    groupManager.getNoTeamYet().remove(counter);
-//            }
-//            else if( groupManager.getNoTeamYet().size() == 0 && groupManager.getListOfGroupsIntoManager().size() == 0){
-//                synchronized (lock) {
-//                    try {
-//                        lock.wait();
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    continue;
-//                }
-//
-
-
-//            int tim2 = groupManager.getListOfGroupsIntoManager().size();
-//
-//            for (int j = 0; j < tim2; j++) {
-//                GroupInfo temp = groupManager.getListOfGroupsIntoManager().get(j);
-//                if (temp == null) {
-//                    break;
-//                }
-//                for (int i = 0; i < temp.getMembers().size(); i++) {
-//                    String data = groupManager.getMsgFromSocket(temp.getMembers().get(i).getAppSocket());
-//                    if (data == null) {
-//                        continue;
-//                    } else if (data.equals("Leave")) {
-//                        EachMemberInfo member = temp.getMembers().get(i);
-//                        temp.getMembers().remove(member);
-//                        if (temp.getMembers().size() == 0) {
-//                            groupManager.getListOfGroupsIntoManager().remove(temp);
-//                            break;
-//                        } else {
-//                            Message newView = new Message("Leave", temp);
-//                            groupManager.informTheGroup(temp, newView, member.getName());
-//                        }
-//                    } else {
-//                        System.out.println(temp.getMembers().get(i).getName() + "Want to be added into new Group");
-//                        groupManager.addMemberToGroups(temp.getMembers().get(i).getAppSocket(), data);
-//                    }
-//                }
-//            }
-//            groupManager.printList(groupManager.getListOfGroupsIntoManager());
-//        }
     }
         static class RecieveNewApps extends Thread {
 
