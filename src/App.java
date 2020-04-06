@@ -122,6 +122,7 @@ class Application extends Thread{
                     int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
 
                     if(returnVal == 0){
+                        System.out.println("No message");
                         break;
                     }
                     int flag = 0;

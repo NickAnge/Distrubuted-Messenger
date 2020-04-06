@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class GroupInfo implements Serializable {
@@ -285,6 +286,7 @@ class UdpMessage implements  Serializable{
 class GroupMessages implements  Serializable {
     List<Message> msgs;
     List<Message> viewsOfTheTeam;
+    HashMap<Integer,Integer> fifoOrders;
     int delivered;
 
     public int getDelivered() {
@@ -295,9 +297,18 @@ class GroupMessages implements  Serializable {
         this.delivered = delivered;
     }
 
+    public HashMap<Integer, Integer> getFifoOrders() {
+        return fifoOrders;
+    }
+
+    public void setFifoOrders(HashMap<Integer, Integer> fifoOrders) {
+        this.fifoOrders = fifoOrders;
+    }
+
     public GroupMessages() {
         this.msgs = new ArrayList<>();
         this.viewsOfTheTeam = new ArrayList<>();
+        this.fifoOrders = new HashMap<>();
         delivered = 0;
     }
 

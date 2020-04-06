@@ -135,7 +135,7 @@ public class GroupManager {
             int gsock =getNumberOfGroups();
             System.out.println("GSOCK:"+ gsock);
             setNumberOfGroups(++gsock);
-            CoorditatorInfo coordinator = new CoorditatorInfo(0,NewMember);
+            CoorditatorInfo coordinator = new CoorditatorInfo(-1,NewMember);
             GroupInfo NewGroup =  new GroupInfo(splitMsg[0],getNumberOfGroups(),coordinator);
 
             NewGroup.getMembers().add(NewMember);
@@ -235,7 +235,7 @@ public class GroupManager {
     public GroupInfo changeCoordinator(GroupInfo oldView){
 
         if(oldView.getMembers().size() > 0){
-            CoorditatorInfo newCord = new CoorditatorInfo(0,oldView.getMembers().get(0));
+            CoorditatorInfo newCord = new CoorditatorInfo(-1,oldView.getMembers().get(0));
             oldView.setCoInfo(newCord);
             return oldView;
         }
