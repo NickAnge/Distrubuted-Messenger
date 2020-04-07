@@ -119,6 +119,7 @@ public class GroupManager {
                 flag = 0;
                 System.out.println("send GroupView");
                 String addMsg = new String("New Member added to the Group:" + NewMember.getName());
+                temp.getCoInfo().setDeliverno(-1);
                 Message newView = new Message("Add",temp,addMsg);
                 this.informTheGroup(temp,newView,NewMember.getName());
 //                Message mesg = new Message("Add",temp);
