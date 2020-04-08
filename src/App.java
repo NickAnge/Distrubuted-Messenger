@@ -39,11 +39,11 @@ class Application extends Thread{
         Scanner in = new Scanner(System.in);
 
         System.out.println(RED_BOLD + "Starting the App..");
-        System.out.print(RED_BOLD + "Give Starting seq Number..");
-        int seq = in.nextInt();
+//        System.out.print(RED_BOLD + "Give Starting seq Number..");
+//        int seq = in.nextInt();
          System.out.println(RESET);
 
-        App.appMiddleware = new Middleware(seq);// Morfh epikinwnias tou application me to middleware
+        App.appMiddleware = new Middleware();// Morfh epikinwnias tou application me to middleware
         // System.out.println(RESET);
 
         if(App.appMiddleware.checkValue == 0){
@@ -84,9 +84,11 @@ class Application extends Thread{
 
                     break;
                 case 2:
+                    if(teams.size() == 0){
+                        System.out.println("NO GROUPS EXIST ... TRY TO CONNECT TO ONE");
+                        break;
+                    }
                     System.out.println(RED_BOLD + "GROUPS ");
-////                    System.out.println(RED_BOLD + "WHICH ONE");
-//                    in.nextLine();
                     for(int i= 0 ; i <teams.size(); i++){
                         System.out.println(CYAN_BOLD + "Code: "+ teams.get(i)+ ", Team Name: "+ AllViews.get(teams.get(i)).getGroupName());
                     }
@@ -105,6 +107,10 @@ class Application extends Thread{
                     }
                     break;
                 case 3:
+                    if(teams.size() == 0){
+                        System.out.println("NO GROUPS EXIST ... TRY TO CONNECT TO ONE");
+                        break;
+                    }
                     System.out.println(RED_BOLD + "GROUPS ");
 ////                    System.out.println(RED_BOLD + "WHICH ONE");
 //                    in.nextLine();
@@ -114,12 +120,15 @@ class Application extends Thread{
 
                     System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
+                    System.out.println(RED_BOLD + "block(1)/No-blocking(0)");
+                    int block = in.nextInt();
+
                     UdpMessage udp = new UdpMessage();
 
                     System.out.println(GREEN +"App received msg");
                     GroupInfo gp = new GroupInfo();
                     Message ms = new Message("",gp,udp);
-                    int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
+                    int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,block);
 
                     if(returnVal == 0){
                         System.out.println("No message");
@@ -132,7 +141,7 @@ class Application extends Thread{
                         UdpMessage udp1 = new UdpMessage();
                         GroupInfo gr = new GroupInfo();
                         ms = new Message("",gr,udp1);
-                        int re = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,0);
+                        int re = App.appMiddleware.grp_recv(Integer.parseInt(Group),ms,block);
                         if(re == 0){
                             flag =1;
                             break;
