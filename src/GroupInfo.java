@@ -33,7 +33,6 @@ public class GroupInfo implements Serializable {
         id = newid;
         this.coInfo = Coinfo;
     }
-
     public int getId() {
         return id;
     }
@@ -61,6 +60,7 @@ class EachMemberInfo implements Serializable {
     private transient  Socket AppSocket ;
     private String MemberAddress;
     int MemberPort;
+    int position;
 
 
     public EachMemberInfo(String name, Socket appSocket, String memberAddress, int memberPort) {
