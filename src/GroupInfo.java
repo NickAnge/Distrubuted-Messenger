@@ -191,6 +191,8 @@ class UdpMessage implements  Serializable{
     private  int selfDelivered;
     private int totaldelivered;
     private  int total;
+    private int dontSendAgain;
+    private int rMessageDontSend;
 
     public int getSelfDelivered() {
         return selfDelivered;
@@ -222,6 +224,24 @@ class UdpMessage implements  Serializable{
         this.selfDelivered =sended;
         this.totaldelivered = totaldelivered;
         this.total = total;
+        dontSendAgain = -1;
+        rMessageDontSend = -1;
+    }
+
+    public int getrMessageDontSend() {
+        return rMessageDontSend;
+    }
+
+    public void setrMessageDontSend(int rMessageDontSend) {
+        this.rMessageDontSend = rMessageDontSend;
+    }
+
+    public int getDontSendAgain() {
+        return dontSendAgain;
+    }
+
+    public void setDontSendAgain(int dontSendAgain) {
+        this.dontSendAgain = dontSendAgain;
     }
 
     public int getTotaldelivered() {

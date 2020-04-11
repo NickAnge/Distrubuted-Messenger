@@ -13,7 +13,6 @@ public class GroupThreads {
     public static void main(String[] args) {
         groupManager = new GroupManager();
         NewApps = new Thread(new RecieveNewApps(groupManager));
-//        ReceiveErrorsFromClients = new Thread(new Recieve)
 
         NewApps.start();
 
@@ -22,13 +21,12 @@ public class GroupThreads {
             if (groupManager.getActiveMembers().size() > 0) {
                 int tim = groupManager.getActiveMembers().size();
                 for (int counter = 0; counter < tim; counter++) {
-//                    Message MsgRequest = (Message) groupManager.getNewMessageFromSocket(groupManager.getNoTeamYet().get(counter));
                     String MsgRequest = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
+
 
                     if (MsgRequest == null) {
                         System.out.println("This App disconnected so we close it");
                         groupManager.removeFromAllGroups(groupManager.getActiveMembers().get(counter));
-                        System.out.println("Perasa");
                         groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
                         groupManager.printList(groupManager.getListOfGroupsIntoManager());
 
@@ -43,7 +41,6 @@ public class GroupThreads {
                     String []MsgSplit =  MsgRequest.split(" ",2);
                     System.out.println(MsgSplit[0]);
                     if (MsgSplit[0].equals("Leave")) {
-                        System.out.println("MESA STHN LEAVE"+MsgRequest);
                         int idGroup = Integer.parseInt(MsgSplit[1]);
 
 
@@ -62,11 +59,8 @@ public class GroupThreads {
                         String leaveMsg = new String("This member left the Group: "+member.getName());
                         //TSEKARW AN EINAI COORDINATOR AUTOS POU FEugei GIA NA TO ALAKSW
                         if(group.getCoInfo().getCoMember().getMemberPort() == member.getMemberPort()){
-                            //change coordinator
-                            System.out.println("Allazw ton coordinator");
                             group.getMembers().remove(member);
                             group = groupManager.changeCoordinator(group);
-                            System.out.println("Meta ton coordinator"+ group);
                         }
                         else{
                             group.getMembers().remove(member);
@@ -74,11 +68,9 @@ public class GroupThreads {
                         }
                         String msg = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
                         if(msg == null){
-                            //diwksto apo oles tis omades
-//                            groupManager.getActiveMembers()
+
                             groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
                         }
-                        System.out.println("paw na svhsw" +group);
                         if (group.getMembers().size() == 0) {
                             groupManager.getListOfGroupsIntoManager().remove(group);
                             break;

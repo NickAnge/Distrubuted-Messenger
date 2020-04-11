@@ -1,4 +1,5 @@
 
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -8,7 +9,6 @@ public class GroupManager {
     public int MultiCastPort = 4321;
 
 
-    //    private HashMap<Integer,GroupInfo> ListOfGroupsIntoManager;
     private List<GroupInfo> ListOfGroupsIntoManager;
     private int numberOfGroups;
     private List<Socket> activeMembers;
@@ -48,11 +48,11 @@ public class GroupManager {
 
         try {
             socket.setSoTimeout(500);
-
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             data = in.readLine();
-            System.out.println("\r\nMessage from " + socket.getInetAddress().getHostAddress() + ": " + data);
-        } catch (SocketTimeoutException e) {
+//            System.out.println("\r\nMessage from " + socket.getInetAddress().getHostAddress() + ": " + data);
+        }
+        catch (SocketTimeoutException e) {
             return data;
         } catch (IOException e) {
             e.printStackTrace();
@@ -83,7 +83,6 @@ public class GroupManager {
         } catch (SocketException e) {
         }
         catch (IOException e){
-//            e.printStackTrace();
 
         }
         return ;
@@ -102,7 +101,7 @@ public class GroupManager {
         }
     }
 
-    public  void addMemberToGroups(Socket socket ,String Member){
+    public  void addMemberToGroups(Socket socket ,String Member){ ///function gia na prosthesoume ena melos eite se nea omada eite se mia palia
 
         String []splitMsg = Member.split(" ",4);
         EachMemberInfo NewMember = new EachMemberInfo(splitMsg[1],socket,splitMsg[2],Integer.parseInt(splitMsg[3]));
@@ -110,7 +109,6 @@ public class GroupManager {
         System.out.println("Info of the new member sended...");
 
 
-//        Set<Integer> gSocket  = this.ListOfGroupsIntoManager.keySet();
         Iterator<GroupInfo> it = this.ListOfGroupsIntoManager.iterator();
         while(it.hasNext()){
             GroupInfo temp = it.next();
@@ -129,10 +127,9 @@ public class GroupManager {
                 flag = 1;
             }
         }
-        //In case, this Group does not exist.
         if(flag == 1 || ListOfGroupsIntoManager.isEmpty()){
             flag = 0;
-            System.out.println("NEW GROUPPPPPP");
+            System.out.println("NEW GROUP");
             int gsock =getNumberOfGroups();
             System.out.println("GSOCK:"+ gsock);
             setNumberOfGroups(++gsock);
@@ -146,7 +143,6 @@ public class GroupManager {
 
             Message mesg = new Message("Add",NewGroup,addMsg);
 
-//            this.ListOfGroupsIntoManager.put(temp,NewGroup);//Prosthikh kainourgias omadas sthn apothikh
             sendNewMessageToSocket(socket,mesg);//apostolh new View
         }
 
@@ -164,7 +160,7 @@ public class GroupManager {
             }
 
         }
-    }
+    }//function gia na ektupwnoume ola ta groups me ta teams
     public  void informTheGroup(GroupInfo group,Message newView,String NoSend){
 
         for(int i = 0; i < group.getMembers().size();i++){
@@ -174,7 +170,7 @@ public class GroupManager {
             System.out.println("Sends new VIew to Members");
             this.sendNewMessageToSocket(group.getMembers().get(i).getAppSocket(),newView);
         }
-    }
+    } //eidopoiei ayto to group gia to kainourgio view
 
     public GroupInfo findMembersGroup(int idOfGroup){
         Iterator<GroupInfo> it = ListOfGroupsIntoManager.iterator();
@@ -187,7 +183,7 @@ public class GroupManager {
             }
         }
         return null;
-    }
+    }//briskei to group me ayto to id kai to epistreefei
 
     public  void removeFromAllGroups(Socket specificSocket){
         System.out.println("MPHKA mesa sto remove all");
@@ -213,7 +209,6 @@ public class GroupManager {
                     else{
                         temp.getMembers().remove(member);
                     }
-                    System.out.println("MPHKA mesa sto remove all");
 //                    if(temp != null ){
                     if(temp.getMembers().size() == 0){
                         ListOfGroupsIntoManager.remove(temp);
@@ -231,7 +226,7 @@ public class GroupManager {
         }
 
         return;
-    }
+    } //afairei to socket-melos apo oles ties omades stis opoies brisketai se periptvsh blabhs
 
     public GroupInfo changeCoordinator(GroupInfo oldView){
 
