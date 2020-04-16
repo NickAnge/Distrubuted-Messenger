@@ -23,7 +23,6 @@ public class GroupThreads {
                 for (int counter = 0; counter < tim; counter++) {
                     String MsgRequest = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
 
-
                     if (MsgRequest == null) {
                         System.out.println("This App disconnected so we close it");
                         groupManager.removeFromAllGroups(groupManager.getActiveMembers().get(counter));
@@ -64,13 +63,14 @@ public class GroupThreads {
                         }
                         else{
                             group.getMembers().remove(member);
-
+//                            Message newView = new Message("Leave",group,leaveMsg);
+//                            groupManager.informTheGroup(group, newView, member.getName());
+//                            break;
                         }
-                        String msg = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
-                        if(msg == null){
-
-                            groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
-                        }
+//                        String msg = groupManager.getMsgFromSocket(groupManager.getActiveMembers().get(counter));
+//                        if(msg == null){
+//                            groupManager.getActiveMembers().remove(groupManager.getActiveMembers().get(counter));
+//                        }
                         if (group.getMembers().size() == 0) {
                             groupManager.getListOfGroupsIntoManager().remove(group);
                             break;
@@ -78,6 +78,7 @@ public class GroupThreads {
                         else {
                             Message newView = new Message("Leave",group,leaveMsg);
                             groupManager.informTheGroup(group, newView, member.getName());
+                            break;
                         }
                     } else {
                         System.out.println(MsgRequest);

@@ -186,7 +186,7 @@ public class GroupManager {
     }//briskei to group me ayto to id kai to epistreefei
 
     public  void removeFromAllGroups(Socket specificSocket){
-        System.out.println("MPHKA mesa sto remove all");
+//        System.out.println("MPHKA mesa sto remove all");
 
         Iterator<GroupInfo> it = ListOfGroupsIntoManager.iterator();
         int tim2 = ListOfGroupsIntoManager.size();
