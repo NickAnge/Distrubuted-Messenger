@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class App{
     public static Middleware middle;
@@ -67,12 +68,15 @@ class Application extends Thread{
             System.out.println(RED_BOLD + "    3) Leave from a Group:");
             System.out.println(RED_BOLD + "    4) Exit App");
             System.out.println(RED_BOLD + "    5) Send messages to a specific Group: ");
-            System.out.println(RED_BOLD + "    6) Receive messages from a specific Group(TERMINAL)(TO END-->Bye)");
+            System.out.println(RED_BOLD + "    6) Receive messages from a specific Group(TERMINAL)");
             System.out.println(RED_BOLD + "    7) Send/receive (file/file ) of messages(FIFO)");
             System.out.println(RED_BOLD + "    8) Send/receive (file/file ) of messages(TOTAL)");
             System.out.println(RED_BOLD + "    9) Receive messages from a specific Group(File)");
-            System.out.println(RED_BOLD + "    10) Receive messages from a specific Group(Terminal)");
+            System.out.println(RED_BOLD + "    10) Receive message(ONE) from a specific Group(Terminal)");
 
+            if(App.appMiddleware.counterUDP > 0){
+                System.out.println(RED_BOLD + "   11) Counter UDP/IP");
+            }
 
             int choice = in.nextInt();
 
@@ -101,7 +105,7 @@ class Application extends Thread{
                     System.out.println(RED_BOLD + "WHICH ONE");
 
                     for (int i = 0; i < teams.size(); i++) {
-                        System.out.println("Code: " + teams.get(i) + ", Team Name: " + AllViews.get(teams.get(i)).getGroupName());
+                        System.out.println(CYAN_BOLD +"Code: " + teams.get(i) + ", Team Name: " + AllViews.get(teams.get(i)).getGroupName());
                     }
                     int group = in.nextInt();
                     int k = -1;
@@ -127,7 +131,7 @@ class Application extends Thread{
                     while (teams.size() > 0) {
                         teams.remove(j);
                     }
-                    System.out.println("INTERRUPT");
+//                    System.out.println("INTERRUPT");
                     App.appMiddleware.middlewareThread.interrupt();
                     return;
 //                    break;
@@ -169,6 +173,8 @@ class Application extends Thread{
                     }
                     System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
+                    System.out.print(RED_BOLD + "CHOOSE FIFO(0) or TOTAL (1): ");
+                    int read1= in.nextInt();
 
                     String readMsg = " ";
                     while(!readMsg.equals("Bye")) {
@@ -178,6 +184,21 @@ class Application extends Thread{
                         Message mReceive = new Message("", gpReceive, udpReceive);
 
                         int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 1);
+//                        long end = System.currentTimeMillis();
+//
+//
+//                        File file1= new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/receive"+name);
+//
+//                        try {
+//                            FileWriter fstream = new FileWriter(file1, true);
+//                            BufferedWriter out = new BufferedWriter(fstream);
+//                            String news = new String(String.valueOf(end));
+//                            System.out.println(news);
+//                            out.append(news+ "\n");
+//                            out.flush();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
 
                         if (returnVal == 0) {
                             readMsg = " ";
@@ -185,7 +206,13 @@ class Application extends Thread{
                         }
 
                         while (!mReceive.getType().equals("")) {
-                            System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getView().getId()).getGroupName() + " " + mReceive.getChangeViewMessage());
+                            if(read1 == 0){
+                                System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getView().getId()).getGroupName() + " " + mReceive.getChangeViewMessage());
+
+                            }
+                            else if(read1 == 1){
+                                System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getView().getId()).getGroupName() + " " + mReceive.getChangeViewMessage());
+                            }
                             AllViews.put(mReceive.getView().getId(), mReceive.getView());
                             UdpMessage udp1 = new UdpMessage();
                             GroupInfo gr = new GroupInfo();
@@ -200,7 +227,13 @@ class Application extends Thread{
                             readMsg = " ";
                             continue;
                         }
-                        System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getSelfDelivered() + " " + mReceive.getMessage().getMessage());
+                        if(read1 == 0){
+                            System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getSelfDelivered() + " " + mReceive.getMessage().getMessage());
+
+                        }
+                        else if(read1 == 1){
+                            System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getTotaldelivered() + " " + mReceive.getMessage().getMessage());
+                        }
                         readMsg = mReceive.getMessage().getMessage();
                     }
                     break;
@@ -215,15 +248,12 @@ class Application extends Thread{
                     }
                     System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
-
-                    System.out.print(RED_BOLD + "CHOOSE FIFO(0) or TOTAL (1): ");
-                    int totali = in.nextInt();
                     System.out.println("START CONVERSATION");
                     in.nextLine();
                     System.out.print(RED_BOLD + "Name of File: ");
                     String NameFile = in.next();
                     File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/"+NameFile);
-                    sendMessages(App.appMiddleware,file,Integer.parseInt(Group),totali);
+                    sendMessages(App.appMiddleware,file,Integer.parseInt(Group),0);
 
                     String read2Msg = " ";
                     while(!read2Msg.equals("Bye")) {
@@ -233,6 +263,21 @@ class Application extends Thread{
                         Message mReceive = new Message("", gpReceive, udpReceive);
 
                         int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 0);
+//                        long end = System.currentTimeMillis();
+//                        System.out.println("TIME :"+mReceive.getMessage().getSeqNo()+" :" + end);
+//                        Measurements code
+//                        File file1= new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/receive"+name+mReceive.getName());
+//
+//                        try {
+//                            FileWriter fstream = new FileWriter(file1, true);
+//                            BufferedWriter out = new BufferedWriter(fstream);
+//                            String news = new String(String.valueOf(end));
+//                            System.out.println(news);
+//                            out.append(news+ "\n");
+//                            out.flush();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
 
                         if (returnVal == 0) {
                             read2Msg = " ";
@@ -272,17 +317,15 @@ class Application extends Thread{
                     System.out.print(RED_BOLD + "CHOOSE GROUP: ");
                     Group = in.next();
 
-                    System.out.print(RED_BOLD + "CHOOSE FIFO(0) or TOTAL (1): ");
-                    int total2 = in.nextInt();
                     System.out.println("START CONVERSATION");
                     in.nextLine();
                     System.out.print(RED_BOLD + "Name of File: ");
                     String NameFile2 = in.next();
                     File file2 = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/"+NameFile2);
-                    sendMessages(App.appMiddleware,file2,Integer.parseInt(Group),total2);
+                    sendMessages(App.appMiddleware,file2,Integer.parseInt(Group),1);
 
                     String read3Msg = " ";
-                    while(!read3Msg.equals("")) {
+                    while(!read3Msg.equals("Bye")) {
                         int flag = 0;
                         UdpMessage udpReceive = new UdpMessage();
                         GroupInfo gpReceive = new GroupInfo();
@@ -290,6 +333,20 @@ class Application extends Thread{
 
                         int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 0);
 
+//                        long end = System.currentTimeMillis();
+//                        System.out.println("TIME :"+mReceive.getMessage().getSeqNo()+" :" + end);
+//                        File file1= new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/receive"+name+mReceive.getName());
+//                      Measurements code
+//                        try {
+//                            FileWriter fstream = new FileWriter(file1, true);
+//                            BufferedWriter out = new BufferedWriter(fstream);
+//                            String news = new String(String.valueOf(end));
+//                            System.out.println(news);
+//                            out.append(news+ "\n");
+//                            out.flush();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
                         if (returnVal == 0) {
                             read3Msg = " ";
                             continue;
@@ -301,7 +358,7 @@ class Application extends Thread{
                             UdpMessage udp1 = new UdpMessage();
                             GroupInfo gr = new GroupInfo();
                             mReceive = new Message("", gr, udp1);
-                            int re = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 0);
+                            int re = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 1);
                             if (re == 0) {
                                 flag = 1;
                                 break;
@@ -311,7 +368,7 @@ class Application extends Thread{
                             read3Msg = " ";
                             continue;
                         }
-//                        System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getSeqNo() + " " + mReceive.getMessage().getMessage());
+//                        System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getTotaldelivered() + " " + mReceive.getMessage().getMessage());
                         creationOfFilesTotal(mReceive,0,Integer.parseInt(Group));
                         read3Msg = mReceive.getMessage().getMessage();
 
@@ -331,7 +388,8 @@ class Application extends Thread{
                     Group = in.next();
                     System.out.print(RED_BOLD + "CHOOSE FIFO(0) or TOTAL (1): ");
                     int read = in.nextInt();
-
+                    System.out.print(RED_BOLD + "BLOCK(1) or NON-BLOCKING(0): ");
+                    int blocking  = in.nextInt();
 
                     String read4Msg = " ";
                     while(!read4Msg.equals("Bye")) {
@@ -340,7 +398,7 @@ class Application extends Thread{
                         GroupInfo gpReceive = new GroupInfo();
                         Message mReceive = new Message("", gpReceive, udpReceive);
 
-                        int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 1);
+                        int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, blocking);
 
                         if (returnVal == 0) {
                             read3Msg = " ";
@@ -360,7 +418,7 @@ class Application extends Thread{
                             UdpMessage udp1 = new UdpMessage();
                             GroupInfo gr = new GroupInfo();
                             mReceive = new Message("", gr, udp1);
-                            int re = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, 1);
+                            int re = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, blocking);
                             if (re == 0) {
                                 flag = 1;
                                 break;
@@ -400,13 +458,26 @@ class Application extends Thread{
                     UdpMessage udpReceive = new UdpMessage();
                     GroupInfo gpReceive = new GroupInfo();
                     Message mReceive = new Message("", gpReceive, udpReceive);
-
                     int returnVal = App.appMiddleware.grp_recv(Integer.parseInt(Group), mReceive, block);
+//                    long end = System.currentTimeMillis();
+//
+//                    File file1= new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/receive"+name);
+//
+//                    try {
+//                        FileWriter fstream = new FileWriter(file1, true);
+//                        BufferedWriter out = new BufferedWriter(fstream);
+//                        String news = new String(String.valueOf(end));
+//                        System.out.println(news);
+//                        out.append(news+ "\n");
+//                        out.flush();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
                     if(returnVal == 0){
                         break;
                     }
                     while (!mReceive.getType().equals("")) {
-                        System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getView().getId()).getGroupName() + " " + mReceive.getChangeViewMessage());
+                        System.out.println("Group" + AllViews.get(mReceive.getView().getId()).getGroupName() + " " + mReceive.getChangeViewMessage());
                         AllViews.put(mReceive.getView().getId(), mReceive.getView());
                         UdpMessage udp1 = new UdpMessage();
                         GroupInfo gr = new GroupInfo();
@@ -420,7 +491,10 @@ class Application extends Thread{
                     if(flag == 1){
                         break;
                     }
-                    System.out.println("Screen:" + name + " Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getSeqNo() + " " + mReceive.getMessage().getMessage());
+                    System.out.println("Group" + AllViews.get(mReceive.getMessage().getGroupId()).getGroupName() + " " + mReceive.getName() + ": " + mReceive.getMessage().getSeqNo() + " " + mReceive.getMessage().getMessage());
+                    break;
+                case 11:
+                    System.out.println("Number of UDP/Ips Messages"+ App.appMiddleware.counterUDP);
                     break;
                 default:
                     System.out.println(RED + "WRONG CHOICE>>>TRY AGAIN");
@@ -449,18 +523,18 @@ class Application extends Thread{
             try {
                 File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/"+name+"_"+name);
                 if (file.createNewFile()) {
-                    System.out.println("File created: " + file.getName());
+//                    System.out.println("File created: " + file.getName());
                     FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                     out = new BufferedWriter(fstream);
                 } else {
                     FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                     out = new BufferedWriter(fstream);
-                    System.out.println("File already exists.");
+//                    System.out.println("File already exists.");
                 }
-                String viewString = new String("Screen:" +name+ " Group" + AllViews.get(msg.getView().getId()).getGroupName() + " "+ msg.getChangeViewMessage());
-                System.out.println();
-                out.append(viewString);
-                out.append("\n");
+                String viewString = new String("Group" + AllViews.get(msg.getView().getId()).getGroupName() + " "+ msg.getChangeViewMessage());
+                System.out.println(viewString);
+//                out.append(viewString);
+//                out.append("\n");
                 out.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -473,16 +547,16 @@ class Application extends Thread{
             }
             File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/"+name+"_"+msg.getName());
             if (file.createNewFile()) {
-                System.out.println("File created: " + file.getName());
+//                System.out.println("File created: " + file.getName());
                 FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                 out = new BufferedWriter(fstream);
             } else {
                 FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                 out = new BufferedWriter(fstream);
-                System.out.println("File already exists.");
+//                System.out.println("File already exists.");
             }
-            String output = new String("Screen:" +name+ " Group" + AllViews.get(msg.getMessage().getGroupId()).getGroupName() + " "+msg.getName() + ": "+ msg.getMessage().getSeqNo()+ " " + msg.getMessage().getMessage());
-            System.out.println(output);
+            String output = new String("Group" + AllViews.get(msg.getMessage().getGroupId()).getGroupName() + " "+msg.getName() + ": "+ msg.getMessage().getSeqNo()+ " " + msg.getMessage().getMessage());
+//            System.out.println(output);
 
             out.append(output);
             out.append("\n");
@@ -494,24 +568,23 @@ class Application extends Thread{
     }
 
     public  void  creationOfFilesTotal(Message msg,int view,int gSock) {
-        System.out.println("MPAINW EDW");
         BufferedWriter out = null;
         if (view == 1) {
                 try {
                     File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/" + name);
                     if (file.createNewFile()) {
-                        System.out.println("File created: " + file.getName());
+//                        System.out.println("File created: " + file.getName());
                         FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                         out = new BufferedWriter(fstream);
                     } else {
                         FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                         out = new BufferedWriter(fstream);
-                        System.out.println("File already exists.");
+//                        System.out.println("File already exists.");
                     }
-                    String viewString = new String("Screen:" + name + " Group" + AllViews.get(msg.getView().getId()).getGroupName() + " " + msg.getChangeViewMessage());
-//                    System.out.println();
-                    out.append(viewString);
-                    out.append("\n");
+                    String viewString = new String("Group" + AllViews.get(msg.getView().getId()).getGroupName() + " " + msg.getChangeViewMessage());
+                    System.out.println(viewString);
+//                    out.append(viewString);
+//                    out.append("\n");
                     out.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -521,15 +594,15 @@ class Application extends Thread{
         try {
             File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/" + name);
             if (file.createNewFile()) {
-                System.out.println("File created: " + file.getName());
+//                System.out.println("File created: " + file.getName());
                 FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                 out = new BufferedWriter(fstream);
             } else {
                 FileWriter fstream = new FileWriter(file, true); //true tells to append data.
                 out = new BufferedWriter(fstream);
-                System.out.println("File already exists.");
+//                System.out.println("File already exists.");
             }
-            String output = new String(" Group" + AllViews.get(msg.getMessage().getGroupId()).getGroupName() + " " + msg.getName() + ": " + msg.getMessage().getTotaldelivered()+ " " + msg.getMessage().getMessage());
+            String output = new String("Group" + AllViews.get(msg.getMessage().getGroupId()).getGroupName() + " " + msg.getName() + ": " + msg.getMessage().getTotaldelivered()+ " " + msg.getMessage().getMessage());
 //            System.out.println(output);
 
             out.append(output);

@@ -22,6 +22,7 @@ public class Middleware implements IApi{
     int globalchoiceWhatI;
     int globalchoicewhatItotal;
     int globalchoiceresends;
+    int globalchoicecoord;
 
     List<Message> receiveMiddle; //for both reliability
     List<UdpMessage> sendsBuffer; //for both RM Messages
@@ -53,14 +54,17 @@ public class Middleware implements IApi{
     HashMap <Integer,List<Integer>> idsCoord;
     HashMap <Integer,Integer> sendedFIFO;
 
+    int counterUDP;
     int gSock;
     public Middleware() {
         lock2 = new Object();
         InfoManager = new GroupManagerInfo(null);
         globalchoice = 0;
         globalchoicewhatItotal = 0;
+        globalchoicecoord =0;
         globalchoiceresends = 0;
         totalbuf=new ArrayList<>();
+        counterUDP = 0;
         totalbufids = new HashMap<>();
         receiveMessages = 0;
         groupMessages = new HashMap<>();
@@ -140,6 +144,21 @@ public class Middleware implements IApi{
 
         UdpMessage newMessage = null;
         seqNumber++;
+        //For Measurements
+//        long start = System.currentTimeMillis();
+//        System.out.println("START " + seqNumber+ "  :" + start);
+//        File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/starts4");
+//
+//        try {
+//            FileWriter fstream = new FileWriter(file, true);
+//            BufferedWriter out = new BufferedWriter(fstream);
+//            String news = new String(String.valueOf(start));
+//            System.out.println(news);
+//            out.append(news+ "\n");
+//            out.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         if(total == 0){
             int num = sendedFIFO.get(gSock);
@@ -407,11 +426,11 @@ public class Middleware implements IApi{
                                 }
                             }
 
-                            synchronized (lock2){
-                                lock2.notify();
-                            }
-                        }
 
+                        }
+                        synchronized (lock2){
+                            lock2.notify();
+                        }
                         middlewareTeamsBuffer.put(teams,newGroup2.getView());
 
 
@@ -496,7 +515,7 @@ public class Middleware implements IApi{
                                         if(middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().getCoMember().getMemberPort() == OurPort){
                                             int deliver = middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().getDeliverno();
                                             deliver++;
-                                            System.out.println("EIMAI O COORDINATOR ///BAZW TTON EPOEMNO SEIRIAKO ARITHMO DELIVER :"+ deliver);
+//                                            System.out.println("EIMAI O COORDINATOR ///BAZW TTON EPOEMNO SEIRIAKO ARITHMO DELIVER :"+ deliver);
                                             middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getCoInfo().setDeliverno(deliver);
                                             receiveMessage.setTotaldelivered(deliver);
                                             for(int i =0;i < middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().size();i++){
@@ -628,14 +647,22 @@ public class Middleware implements IApi{
                                         globalchoice = 0;
                                     }
                                     sendsBuffer.get(globalchoice).setSenderPort(OurPort);
+                                    System.out.println(sendsBuffer.get(globalchoice).getSeqNo());
                                     BM_send(sendsBuffer.get(globalchoice),sendsBuffer.get(globalchoice).getGroupId());
                                     globalchoice++;
                                 }
                             }
                             else if(coordBuffer.size() > 0){
-                                for(int i = 0; i <coordBuffer.size();i++){
-                                    BM_send(coordBuffer.get(i),coordBuffer.get(i).getGroupId());
+//                                System.out.println("stelnw pali coord");
+                                if(globalchoicecoord >= coordBuffer.size()){
+                                    globalchoicecoord = 0;
                                 }
+                                coordBuffer.get(globalchoicecoord).setSenderPort(OurPort);
+                                BM_send(coordBuffer.get(globalchoicecoord),coordBuffer.get(globalchoicecoord).getGroupId());
+                                globalchoicecoord++;
+//                                for(int i = 0; i <coordBuffer.size();i++){
+//                                    BM_send(coordBuffer.get(i),coordBuffer.get(i).getGroupId());
+//                                }
                             }
                             else if(resend.size() > 0){
                                 int again = -1;
@@ -704,7 +731,7 @@ public class Middleware implements IApi{
                                 sendsBuffer.get(counter).getMembersSend().remove(i);
                                 if (sendsBuffer.get(counter).getMembersSend().size() == 0) {
                                     se++;
-                                    System.out.println("Took ack from everyone: " + sendsBuffer.get(counter).getSeqNo() + " " + sendsBuffer.get(counter).getMessage() + " " + sendsBuffer.get(counter).getStartingSender());
+//                                    System.out.println("Took ack from everyone: " + sendsBuffer.get(counter).getSeqNo() + " " + sendsBuffer.get(counter).getMessage() + " " + sendsBuffer.get(counter).getStartingSender());
                                     Message rec = new Message("", sendsBuffer.get(counter));
                                     receiveMiddle.add(rec);
                                     delete = 1;
@@ -723,7 +750,7 @@ public class Middleware implements IApi{
                                 }
                             }
                             if(delete == 1){
-//                                sizeSends = -1;
+                                sizeSends = -1;
                                 break;
                             }
                             k = 0;
@@ -800,6 +827,7 @@ public class Middleware implements IApi{
                     if(msg.getMembersSend().get(i) == temp.getMemberPort()){
 //                        System.out.println("SEND PORT"+ temp.getMemberPort());
                         DatagramPacket packet2 = new DatagramPacket(byteMsg, byteMsg.length, InetAddress.getByName(temp.getMemberAddress()), temp.getMemberPort());
+                        counterUDP++;
                         Discovery.send(packet2);
                     }
                 }
@@ -832,19 +860,36 @@ public class Middleware implements IApi{
                             if (l >=0) {
                                 sendsBuffer.get(i).getMembersSend().remove(l);
                             }
-                            if(sendsBuffer.get(i).getMembersSend().size() == 0){
-                                receiveMessage.setDontSendAgain(1);
-                            }
+
                             if (receiveMessage.getSenderPort() != OurPort) {
                                   receiveMessage.setSenderPort(OurPort);
-
+                                if(sendsBuffer.get(i).getMembersSend().size() == 0){
+                                    receiveMessage.setDontSendAgain(1);
+                                }
+                                int our = -1;
+                                for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                    if(receiveMessage.getMembersSend().get(counter) == OurPort){
+                                        our = counter;
+                                    }
+                                }
+                                if(our >= 0){
+                                    receiveMessage.getMembersSend().remove(our);
+                                }
+                                int sender = -1;
+                                for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                    if(receiveMessage.getMembersSend().get(counter) == receiveMessage.getSenderPort()){
+                                        sender = counter;
+                                    }
+                                }
+                                if(sender >= 0){
+                                    receiveMessage.getMembersSend().remove(sender);
+                                }
                                 BM_send(receiveMessage, receiveMessage.getGroupId());
                             }
                             hold = 1;
                             if (sendsBuffer.get(i).getMembersSend().size() == 0) {
 //                                hold = i;
                                 se++;
-
                                 Message rec = new Message("", receiveMessage);
                                 receiveMiddle.add(rec);
                                 delete = 1;
@@ -855,7 +900,6 @@ public class Middleware implements IApi{
                     }
                 }
                 if (hold == 0) {
-
                     UdpMessage sendAddition = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender(),receiveMessage.getTotal(),receiveMessage.getSelfDelivered(),-1);
 //
                     for (int counter = 0; counter < receiveMessage.getMembersSend().size(); counter++) {
@@ -876,6 +920,15 @@ public class Middleware implements IApi{
                     }
                     if (p >= 0) {
                         sendsBuffer.get(size - 1).getMembersSend().remove(p);
+                    }
+                    int a =-1;
+                    for (int counter = 0; counter < sendsBuffer.get(size - 1).getMembersSend().size(); counter++) {
+                        if (sendsBuffer.get(size - 1).getMembersSend().get(counter) == OurPort) {
+                            a = counter;
+                        }
+                    }
+                    if(a >=0){
+                        sendsBuffer.get(size - 1).getMembersSend().remove(a);
                     }
                     if (receiveMessage.getSenderPort() != OurPort) {
                         receiveMessage.setSenderPort(OurPort);
@@ -899,6 +952,15 @@ public class Middleware implements IApi{
                 }
                 if(delete == 1){
                     sendsBuffer.remove(i);
+                    int p = -1;
+                    for(int j = 0;j <whatIsendTotal.size();j++){
+                        if(whatIsendTotal.get(j).getSeqNo() == receiveMessage.getSeqNo() && whatIsendTotal.get(j).getStartingSender() == receiveMessage.getStartingSender()){
+                            p = j;
+                        }
+                    }
+                    if(p >= 0){
+                        whatIsendTotal.remove(p);
+                    }
                 }
             }
             else if(mids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())) {
@@ -922,11 +984,9 @@ public class Middleware implements IApi{
                     BM_send(receiveMessage, receiveMessage.getGroupId());
                 }
             }
-//            return;
         }
         else if(receiveMessage.getTotaldelivered() >= 0){
             if(!rids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())){
-//                System.out.println("RESends Buffer");
                 int i=0;
                 for(; i < resend.size();i++){
                     if(resend.get(i).getSeqNo() == receiveMessage.getSeqNo() && resend.get(i).getStartingSender() == receiveMessage.getStartingSender()){ // an to sequenve number einai idio kai to Starting sender einai idio tote prokeite gia to idio mhnuma
@@ -940,11 +1000,30 @@ public class Middleware implements IApi{
                         if (l >=0) {
                             resend.get(i).getMembersSend().remove(l);
                         }
+
                         if (receiveMessage.getSenderPort() != OurPort) {
                             receiveMessage.setSenderPort(OurPort);
 //
                             if(resend.get(i).getMembersSend().size() == 0){
                                 receiveMessage.setrMessageDontSend(1);
+                            }
+                            int our = -1;
+                            for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                if(receiveMessage.getMembersSend().get(counter) == OurPort){
+                                    our = counter;
+                                }
+                            }
+                            if(our >= 0){
+                                receiveMessage.getMembersSend().remove(our);
+                            }
+                            int sender = -1;
+                            for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                if(receiveMessage.getMembersSend().get(counter) == receiveMessage.getSenderPort()){
+                                    sender = counter;
+                                }
+                            }
+                            if(sender >= 0){
+                                receiveMessage.getMembersSend().remove(sender);
                             }
                             BM_send(receiveMessage, receiveMessage.getGroupId());
                         }
@@ -979,6 +1058,15 @@ public class Middleware implements IApi{
                     if (p >= 0) {
                         resend.get(size - 1).getMembersSend().remove(p);
                     }
+                    int a =-1;
+                    for (int counter = 0; counter < resend.get(size - 1).getMembersSend().size(); counter++) {
+                        if (resend.get(size - 1).getMembersSend().get(counter) == OurPort) {
+                            a = counter;
+                        }
+                    }
+                    if(a >=0){
+                        resend.get(size - 1).getMembersSend().remove(a);
+                    }
                     if (receiveMessage.getSenderPort() != OurPort) {
                         receiveMessage.setSenderPort(OurPort);
 //
@@ -997,18 +1085,10 @@ public class Middleware implements IApi{
                 }
                 if(delete == 1){
                     resend.remove(i);
-                    int p = -1;
-                    for(int j = 0;j <whatIsendTotal.size();j++){
-                        if(whatIsendTotal.get(j).getSeqNo() == receiveMessage.getSeqNo()){
-                            p = j;
-                        }
-                    }
-                    if(p >= 0){
-                        whatIsendTotal.remove(p);
-                    }
+
                     int l = -1;
                     for(int j = 0;j <coordBuffer.size();j++){
-                        if(coordBuffer.get(j).getSeqNo() == receiveMessage.getSeqNo() && coordBuffer.get(j).getSenderPort() == receiveMessage.getSenderPort()){
+                        if(coordBuffer.get(j).getSeqNo() == receiveMessage.getSeqNo() && coordBuffer.get(j).getStartingSender() == receiveMessage.getStartingSender()){
                             l = j;
                         }
                     }
@@ -1061,7 +1141,13 @@ public class Middleware implements IApi{
 
         if(!totalbufids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())){
             totalbufids.get(receiveMessage.getStartingSender()).add(receiveMessage.getSeqNo());
-            Message rec = new Message("", receiveMessage);
+//            System.out.println("receive id " +receiveMessage.getSeqNo()+"rece"+receiveMessage.getTotaldelivered());
+            UdpMessage newAddi = new UdpMessage(receiveMessage.getMessage(), receiveMessage.getSeqNo(), receiveMessage.getSenderPort(), receiveMessage.getGroupId(), receiveMessage.getStartingSender(),receiveMessage.getTotal(),receiveMessage.getSelfDelivered(),receiveMessage.getTotaldelivered());
+            for (int counter = 0; counter < receiveMessage.getMembersSend().size(); counter++) {
+                newAddi.getMembersSend().add(receiveMessage.getMembersSend().get(counter));
+            }
+
+            Message rec = new Message("", newAddi);
             totalbuf.add(rec);
             for(int j = 0;j < middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().size();j++){
                 if(receiveMessage.getStartingSender() == middlewareTeamsBuffer.get(receiveMessage.getGroupId()).getMembers().get(j).getMemberPort()){
@@ -1069,10 +1155,10 @@ public class Middleware implements IApi{
                 }
             }
         }
-        else {
+         if(totalbufids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())){
             if(receiveMessage.getTotaldelivered() >= 0) {
                 for(int counter = 0;counter < totalbuf.size();counter++){
-                    if(receiveMessage.getSeqNo() == totalbuf.get(counter).getMessage().getSeqNo()){
+                    if(receiveMessage.getSeqNo() == totalbuf.get(counter).getMessage().getSeqNo() && receiveMessage.getStartingSender() == totalbuf.get(counter).getMessage().getStartingSender()){
                         totalbuf.get(counter).getMessage().setTotaldelivered(receiveMessage.getTotaldelivered());
                     }
                 }
@@ -1087,8 +1173,7 @@ public class Middleware implements IApi{
                 }
             }
         }
-
-
+        System.out.println("TOTAL DELIVER"+totaldelivered);
         checkTotalBuffer();
     }
     public void checkTotalBuffer(){
@@ -1096,7 +1181,6 @@ public class Middleware implements IApi{
             int j = -1;
             for(int i = 0;i<totalbuf.size();i++){
                 if(totalbuf.get(i).getMessage().getTotaldelivered() == totaldelivered){
-//                    System.out.println(totalbuf.get(i).getMessage().getTotaldelivered() + "SEIRA PARADWSHS");
                     appids.get(totalbuf.get(i).getMessage().getStartingSender()).add(totalbuf.get(i).getMessage().getSeqNo());
                     groupMessages.get(totalbuf.get(i).getMessage().getGroupId()).getMsgs().add(totalbuf.get(i));
                     totaldelivered++;
@@ -1104,6 +1188,7 @@ public class Middleware implements IApi{
                     synchronized (lock2){
                         lock2.notify();
                     }
+                    break;
                 }
             }
             if(j >= 0){
@@ -1117,7 +1202,6 @@ public class Middleware implements IApi{
     public void  BM_deliver(UdpMessage receiveMessage){
         int delete = 0;
         int hold = 0;
-
 
         if(!mids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())) {
             int i = 0;
@@ -1142,12 +1226,30 @@ public class Middleware implements IApi{
                             if(sendsBuffer.get(i).getMembersSend().size() == 0){
                                 receiveMessage.setDontSendAgain(1);
                             }
+                            int our = -1;
+                            for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                if(receiveMessage.getMembersSend().get(counter) == OurPort){
+                                    our = counter;
+                                }
+                            }
+                            if(our >= 0){
+                                receiveMessage.getMembersSend().remove(our);
+                            }
+                            int sender = -1;
+                            for (int counter =0; counter < receiveMessage.getMembersSend().size();counter++){
+                                if(receiveMessage.getMembersSend().get(counter) == receiveMessage.getSenderPort()){
+                                    sender = counter;
+                                }
+                            }
+                            if(sender >= 0){
+                                receiveMessage.getMembersSend().remove(sender);
+                            }
                             BM_send(receiveMessage, receiveMessage.getGroupId());
                         }
                         hold = 1;
                         if (sendsBuffer.get(i).getMembersSend().size() == 0) {
                             se++;
-                            System.out.println("Took ack from everyone: mesa sthn bm_deliver"+ receiveMessage.getSeqNo() +" "+ receiveMessage.getMessage() + " " +receiveMessage.getStartingSender());
+//                            System.out.println("Took ack from everyone: mesa sthn bm_deliver"+ receiveMessage.getSeqNo() +" "+ receiveMessage.getMessage() + " " +receiveMessage.getStartingSender());
                             Message rec = new Message("", receiveMessage);
                             receiveMiddle.add(rec);
                             delete = 1;
@@ -1199,7 +1301,7 @@ public class Middleware implements IApi{
                 }
                 if (sendsBuffer.get(size - 1).getMembersSend().size() == 0) {
                     se++;
-                    System.out.println("Took ack from everyone: sthn prwth"+ receiveMessage.getSeqNo() +" "+ receiveMessage.getMessage() + " " +receiveMessage.getStartingSender());
+//                    System.out.println("Took ack from everyone: sthn prwth"+ receiveMessage.getSeqNo() +" "+ receiveMessage.getMessage() + " " +receiveMessage.getStartingSender());
                     Message rec = new Message("", receiveMessage);
                     receiveMiddle.add(rec);
                     mids.get(receiveMessage.getStartingSender()).add(receiveMessage.getSeqNo());
@@ -1252,9 +1354,9 @@ public class Middleware implements IApi{
             }
         }
 
-        System.out.println("OK: " +se);
-        System.out.println("BUffer SIZE :"+ sendsBuffer.size());
-        System.out.println("WHAT I SEND SIZE"+ whatIsend.size());
+//        System.out.println("OK: " +se);
+//        System.out.println("BUffer SIZE :"+ sendsBuffer.size());
+//        System.out.println("WHAT I SEND SIZE"+ whatIsend.size());
 //
 
         if(!mbufids.get(receiveMessage.getStartingSender()).contains(receiveMessage.getSeqNo())){
