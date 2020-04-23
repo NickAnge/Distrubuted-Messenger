@@ -147,7 +147,7 @@ public class Middleware implements IApi{
         //For Measurements
 //        long start = System.currentTimeMillis();
 //        System.out.println("START " + seqNumber+ "  :" + start);
-//        File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/starts4");
+//        File file = new File("/home/aggenikos/katanemhmena/Messenger/src/TestFilesFIfo/checkFiles/starts1");
 //
 //        try {
 //            FileWriter fstream = new FileWriter(file, true);
@@ -1173,7 +1173,7 @@ public class Middleware implements IApi{
                 }
             }
         }
-        System.out.println("TOTAL DELIVER"+totaldelivered);
+//        System.out.println("TOTAL DELIVER"+totaldelivered);
         checkTotalBuffer();
     }
     public void checkTotalBuffer(){

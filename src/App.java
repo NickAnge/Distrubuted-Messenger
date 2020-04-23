@@ -510,7 +510,7 @@ class Application extends Thread{
                 String msg = sc.next();
                 App.appMiddleware.grp_send(Group,msg,0,total);
             }
-            System.out.println("BGHKA APO THN WHILE");
+//            System.out.println("BGHKA APO THN WHILE");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
