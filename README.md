@@ -20,7 +20,7 @@
 - Images of what it should look like
 
 ### Clone
- - Clone this repo to your local machine using :
+ - Clone this repo to your local machine using : git clone https://github.com/NickAnge/Messenger.git
 
 ### Compile 
   - javac GroupThread.java
@@ -29,4 +29,16 @@
   - javac Middleware.java
 ### Start
   - Start GroupManager First: java GroupThread
-  - Start Applications one or more (Different Terminal-Windows)
+  - Start Applications one or more (Different Terminal-Windows) : java App
+  
+  
+### Gif-GroupManager
+![ttystudio GIF](https://github.com/NickAnge/Messenger/blob/master/src/GroupManager.gif)
+### Gif-App
+![ttystudio GIF](https://github.com/NickAnge/Messenger/blob/master/src/App.gif)
+
+
+## Features
+ - Join Group(One or More)
+ - Send A Fifo Message to your Group(Terminal or File)
+ - Receive A Fifo Message From your Group (Terminal or File)
