@@ -37,7 +37,7 @@
 ### Gif-App
 ![ttystudio GIF](https://github.com/NickAnge/Messenger/blob/master/src/App.gif)
 
-
+---
 ## Features
  - Join Group(One or More)
  - Send A Fifo Message to your Group(Terminal or File)
